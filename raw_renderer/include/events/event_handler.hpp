@@ -7,7 +7,7 @@
 #include <string>
 
 #define GET_HANDLER_NAME(handler) handler.target_type().name()
-#define EVENT_HANDLER_PTR(handler, event) std::make_unique<tHandlerWrapper<event>>(handler)
+#define EVENT_HANDLER_PTR(handler, event) std::make_unique<EventHandlerWrapper<event>>(handler)
 
 namespace Raw
 {

@@ -5,7 +5,6 @@ project(raw_renderer VERSION 0.0.1 LANGUAGES CXX)
 add_subdirectory(external/SDL)
 
 file(GLOB SOURCES
-    "raw_renderer/entry_point.cpp"
     "raw_renderer/src/*.cpp", 
     "raw_renderer/src/*/*.cpp", 
     "raw_renderer/src/*/*/*.cpp", 
@@ -36,4 +35,13 @@ if(WIN32)
 else()
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
     COMMAND mkdir -p ${LOGS_DIR})
+endif()
+
+if(WIN32)
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_SOURCE_DIR}/build/external/SDL/Debug/SDL3.dll"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    )
 endif()
