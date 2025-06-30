@@ -1,0 +1,40 @@
+#pragma once
+
+#include "renderer/command_buffer.hpp"
+#include <vulkan/vulkan.h>
+
+namespace Raw::GFX
+{
+    struct VulkanPipeline;
+
+    class VulkanCommandBuffer final : public ICommandBuffer
+    {
+    public:
+        VulkanCommandBuffer();
+
+        virtual void Init(EQueueType type) override;
+
+        virtual void BeginCommandBuffer() override;
+        virtual void BeginSecondaryCommandBuffer() override;
+        virtual void EndCommandBuffer() override;
+
+        virtual void Clear(const glm::vec4& rgba) override;
+        virtual void ClearDepthStencil(const glm::vec2& ds) override;
+        virtual void CopyImage(const TextureHandle& src, const TextureHandle& dst) override;
+        virtual void Dispatch(const ComputePipelineHandle& handle, u32 groupX, u32 groupY, u32 groupZ) override;
+        virtual void TransitionImage(const TextureHandle& handle, ETextureLayout newLayout) override;
+        virtual void AddMemoryBarrier(EAccessFlags srcAccess, EAccessFlags dstAccess, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) override;
+        virtual void BeginRendering(const GraphicsPipelineHandle& handle, bool useDepth = false, bool clearAttachments = false, bool writeDepth = false) override;
+        virtual void BindPipeline(const GraphicsPipelineHandle& handle) override;
+        virtual void EndRendering() override;
+        virtual void Draw(u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance) override;
+        virtual void DrawIndexed(u32 indexCount, u32 instanceCount, u32 firstIndex, i32 vertexOffset, u32 firstInstance) override;
+        virtual void BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform = glm::mat4(1.f), PBRMaterialData materialData = {}) override;
+        virtual void BindIndexBuffer(const BufferHandle& indexBuffer) override;
+
+        VkCommandBuffer vulkanCmdBuffer{ VK_NULL_HANDLE };
+        VulkanPipeline* activeGraphicsPipeline{ nullptr };
+        VkRenderingInfo curRenderingInfo{};
+        
+    }; 
+}
