@@ -6,6 +6,8 @@ add_subdirectory(external/SDL)
 add_subdirectory(external/glm)
 add_subdirectory(external/vma)
 
+find_package(Vulkan REQUIRED)
+
 file(GLOB SOURCES
     "raw_renderer/src/*.cpp", 
     "raw_renderer/src/*/*.cpp", 
@@ -52,3 +54,32 @@ if(WIN32)
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
     )
 endif()
+
+set(VULKAN_SHADERS_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders-bin/vulkan)
+target_compile_definitions(${PROJECT_NAME} PRIVATE VULKAN_SHADERS_DIR="${VULKAN_SHADERS_BIN_DIR}")
+if(WIN32)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        _CRT_SECURE_NO_WARNINGS=1
+        WIN32_LEAN_AND_MEAN
+        NOMINMAX)
+endif()
+
+# Vulkan Shader Compilation
+file (GLOB VULKAN_SHADERS 
+    "shaders/vulkan/*.frag" 
+    "shaders/vulkan/*.vert" 
+    "shaders/vulkan/*.comp")
+
+if(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+    COMMAND if not exist ${VULKAN_SHADERS_BIN_DIR} mkdir ${VULKAN_SHADERS_BIN_DIR})
+else()
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+    COMMAND mkdir -p ${VULKAN_SHADERS_BIN_DIR})
+endif()
+
+foreach(shader ${VULKAN_SHADERS})
+    get_filename_component(SHADER_NAME ${shader} NAME)
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+    COMMAND glslc -c ${shader} -o ${VULKAN_SHADERS_BIN_DIR}/${SHADER_NAME}.spv)
+endforeach()

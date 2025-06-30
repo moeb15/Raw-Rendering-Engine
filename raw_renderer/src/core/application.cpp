@@ -3,6 +3,7 @@
 #include "core/asserts.hpp"
 #include "platform/multiplatform_window.hpp"
 //#include "core/input.hpp"
+#include "renderer/vulkan/vk_gfxdevice.hpp"
 #include "events/event_manager.hpp"
 #include "core/timer.hpp"
 #include "core/job_system.hpp"
@@ -33,6 +34,21 @@ namespace Raw
         ServiceLocator::Get()->AddService(MultiPlatformWindow::Get(), IWindow::k_ServiceName);
         ServiceLocator::Get()->GetServiceByType<MultiPlatformWindow>()->Initialize(wConfig);
 
+        auto windowSize = MultiPlatformWindow::Get()->GetWindowSize();
+        auto maxWindowSize = MultiPlatformWindow::Get()->GetMaxWindowSize();
+        GFX::DeviceConfig dConfig;
+        dConfig.name = config.name;
+        dConfig.rendererAPI = GFX::EDeviceBackend::VULKAN;
+        dConfig.width = windowSize.first;
+        dConfig.height = windowSize.second;
+        dConfig.maxWidth = maxWindowSize.first;
+        dConfig.maxHeight = maxWindowSize.second;
+        dConfig.windowHandle = MultiPlatformWindow::Get()->GetWindowHandle();
+
+        RAW_INFO("Intializing Renderer Backend...");
+        ServiceLocator::Get()->AddService(GFX::VulkanGFXDevice::Get(), GFX::IGFXDevice::k_ServiceName);
+        ServiceLocator::Get()->GetServiceByType<GFX::VulkanGFXDevice>()->InitializeDevice(dConfig);
+
         m_Suspended = false;
     }
     
@@ -47,6 +63,16 @@ namespace Raw
         {
             if(!m_Suspended)
             {
+                GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
+
+                device->BeginFrame();
+
+                GFX::ICommandBuffer* cmd = device->GetCommandBuffer();
+                cmd->BeginCommandBuffer();
+                cmd->Clear({ 1.f, 0.f, 0.f, 1.f });
+
+                device->EndFrame();
+
                 endTime = Timer::Get()->Now();
                 deltaTime = Timer::Get()->DeltaSeconds(curTime, endTime);
                 curTime = endTime;
@@ -61,6 +87,7 @@ namespace Raw
     
     void Application::Shutdown()
     {
+        ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName)->Shutdown();
         ServiceLocator::Get()->GetService(IWindow::k_ServiceName)->Shutdown();
      
         EventManager::Get()->Unsubscribe(GET_HANDLER_NAME(m_MinimizedHandler), WindowMinimizeEvent::GetStaticEventType());
