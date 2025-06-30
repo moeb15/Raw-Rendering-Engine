@@ -29,10 +29,8 @@ namespace Raw::GFX
         virtual void InitializeDevice(DeviceConfig& config) = 0;
         virtual void Shutdown() override {}
         
-#if RAW_ENGINE_EDITOR
         virtual void InitializeEditor() = 0;
         virtual void BeginOverlay() = 0;
-#endif
 
         virtual void BeginFrame() = 0;
         virtual void EndFrame() = 0;
