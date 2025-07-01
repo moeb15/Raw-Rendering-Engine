@@ -12,7 +12,18 @@ file(GLOB SOURCES
     "raw_renderer/src/*.cpp", 
     "raw_renderer/src/*/*.cpp", 
     "raw_renderer/src/*/*/*.cpp", 
-    "raw_renderer/src/*/*/*/*.cpp" )
+    "raw_renderer/src/*/*/*/*.cpp",
+    "external/imgui/imconfig.h",
+    "external/imgui/imgui.h",
+    "external/imgui/imgui.cpp",
+    "external/imgui/imgui_draw.cpp",
+    "external/imgui/imgui_internal.h",
+    "external/imgui/imgui_tables.cpp",
+    "external/imgui/imgui_widgets.cpp",
+    "external/imgui/imstb_rectpack.h",
+    "external/imgui/imstb_textedit.h",
+    "external/imgui/imstb_truetype.h",
+    "external/imgui/imgui_demo.cpp" )
 
 add_executable(${PROJECT_NAME} ${SOURCES} )
 
@@ -25,6 +36,7 @@ target_include_directories(${PROJECT_NAME}
         ${Vulkan_INCLUDE_DIRS}
         SDL3
         VulkanMemoryAllocator
+        "external/imgui"
 )
 
 target_link_libraries(${PROJECT_NAME}

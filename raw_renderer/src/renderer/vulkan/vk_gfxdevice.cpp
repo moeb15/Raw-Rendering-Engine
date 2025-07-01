@@ -16,8 +16,8 @@
 #include <algorithm>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-// #include <backends/imgui_impl_vulkan.h>
-// #include <backends/imgui_impl_sdl3.h>
+#include <backends/imgui_impl_vulkan.h>
+#include <backends/imgui_impl_sdl3.h>
 
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -691,8 +691,8 @@ namespace Raw::GFX
         TextureDesc drawImageDesc;
         drawImageDesc.depth = 1;
         drawImageDesc.format = vkUtils::ToTextureFormat(m_SurfaceFormat.format);
-        drawImageDesc.width = config.width;
-        drawImageDesc.height = config.height;
+        drawImageDesc.width = config.maxWidth;
+        drawImageDesc.height = config.maxHeight;
         drawImageDesc.isRenderTarget = true;
         drawImageDesc.isStorageImage = true;
         drawImageDesc.isMipmapped = false;
@@ -724,7 +724,7 @@ namespace Raw::GFX
 
     void VulkanGFXDevice::InitializeEditor()
     {
-        /* VkDescriptorPoolSize poolSizes[] =
+        VkDescriptorPoolSize poolSizes[] =
         {
             {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -750,7 +750,7 @@ namespace Raw::GFX
         ImGui::CreateContext();
 
         ImGuiIO& io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableSetMousePos;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableSetMousePos;
         
         IWindow* windowInterface = (IWindow*)ServiceLocator::Get()->GetService(IWindow::k_ServiceName);
         ImGui_ImplSDL3_InitForVulkan((SDL_Window*)windowInterface->GetWindowHandle());
@@ -772,12 +772,6 @@ namespace Raw::GFX
         info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
         ImGui_ImplVulkan_Init(&info);
-        ImGui_ImplVulkan_CreateFontsTexture();
-
-        VulkanTexture* drawTex = GetTexture(drawImage);
-        VkSampler* sampler = GetSampler(m_LinearSampler);
-
-        m_ImGuiDrawImage = ImGui_ImplVulkan_AddTexture(*sampler, drawTex->srv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); */
     }
 
     void VulkanGFXDevice::Shutdown()
@@ -792,10 +786,10 @@ namespace Raw::GFX
         immExecGFX.Shutdown();
         resCache.Shutdown();
 
-       // RAW_INFO("Vulkan Editor shutting down...");
-       // ImGui_ImplVulkan_Shutdown();
-       // ImGui_ImplSDL3_Shutdown();
-       // vkDestroyDescriptorPool(m_LogicalDevice, m_ImGuiPool, nullptr);
+        RAW_INFO("Vulkan Editor shutting down...");
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        vkDestroyDescriptorPool(m_LogicalDevice, m_ImGuiPool, nullptr);
 
         RAW_INFO("Destroying Vulkan Bindless Pool and Layout.")
         vkDestroyDescriptorSetLayout(m_LogicalDevice, m_BindlessLayout, m_AllocCallbacks);
@@ -912,8 +906,7 @@ namespace Raw::GFX
 
         vkUtils::CopyImageToImage(curCmdBuffer->vulkanCmdBuffer, vulkanDrawImage->image, m_SwapchainImages[m_SwapchainImageIndex], drawImageExtent, m_SwapchainExtent);
         
-        // curCmdBuffer->TransitionImage(drawImage, ETextureLayout::SHADER_READ_ONLY_OPTIMAL);
-        // RenderOverlay(curCmdBuffer->vulkanCmdBuffer, m_SwapchainImageViews[m_SwapchainImageIndex]);
+        RenderOverlay(curCmdBuffer->vulkanCmdBuffer, m_SwapchainImageViews[m_SwapchainImageIndex]);
 
         vkUtils::TransitionImage(curCmdBuffer->vulkanCmdBuffer, m_SwapchainImages[m_SwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
 
@@ -2137,18 +2130,8 @@ namespace Raw::GFX
 
     void VulkanGFXDevice::RenderOverlay(VkCommandBuffer cmd, VkImageView curSwapchainView)
     {
-        /* ImGui::Begin("Scene");
-        ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-        f32 imgAspectRatio = (f32)drawImageExtent.width / (f32)drawImageExtent.height;
-        f32 vpAspectRatio = viewportPanelSize.x / viewportPanelSize.y;
-        
-        f32 imgHeight = viewportPanelSize.x / imgAspectRatio;
-        ImGui::Image((ImTextureID)m_ImGuiDrawImage, ImVec2(viewportPanelSize.x, imgHeight));
-        
-        ImGui::End();
-        
         ImGui::Render();
-
+        
         VkRenderingAttachmentInfo cAttch = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
         cAttch.imageView = curSwapchainView;
         cAttch.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -2169,12 +2152,16 @@ namespace Raw::GFX
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
         vkCmdEndRendering(cmd);
-        PopMarker(cmd);*/
+        PopMarker(cmd);
     }
 
     void VulkanGFXDevice::BeginOverlay()
     {
-        // ImGui_ImplVulkan_NewFrame();
-        // ImGui_ImplSDL3_NewFrame();
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
+        ImGui::NewFrame();
+
+        static bool demo = true;
+        ImGui::ShowDemoWindow(&demo);
     }
 }

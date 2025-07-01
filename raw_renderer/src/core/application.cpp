@@ -48,6 +48,7 @@ namespace Raw
         RAW_INFO("Intializing Renderer Backend...");
         ServiceLocator::Get()->AddService(GFX::VulkanGFXDevice::Get(), GFX::IGFXDevice::k_ServiceName);
         ServiceLocator::Get()->GetServiceByType<GFX::VulkanGFXDevice>()->InitializeDevice(dConfig);
+        ServiceLocator::Get()->GetServiceByType<GFX::VulkanGFXDevice>()->InitializeEditor();
 
         m_Suspended = false;
     }
@@ -65,6 +66,7 @@ namespace Raw
             {
                 GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
 
+                device->BeginOverlay();
                 device->BeginFrame();
 
                 GFX::ICommandBuffer* cmd = device->GetCommandBuffer();

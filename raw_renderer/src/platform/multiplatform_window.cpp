@@ -3,6 +3,7 @@
 #include "events/event_manager.hpp"
 #include "events/core_events.hpp"
 #include <SDL3/SDL.h>
+#include <backends/imgui_impl_sdl3.h>
 
 namespace Raw
 {
@@ -49,6 +50,8 @@ namespace Raw
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0)
         {
+            ImGui_ImplSDL3_ProcessEvent(&e);
+            
             if(e.type == SDL_EVENT_QUIT)
             {
                 // Immediately trigger application exit event so listeners can respond
