@@ -2,7 +2,7 @@
 #include "core/servicelocator.hpp"
 #include "core/asserts.hpp"
 #include "platform/multiplatform_window.hpp"
-//#include "core/input.hpp"
+#include "core/input.hpp"
 #include "renderer/vulkan/vk_gfxdevice.hpp"
 #include "events/event_manager.hpp"
 #include "core/timer.hpp"
@@ -32,7 +32,11 @@ namespace Raw
         EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_RestoredHandler, WindowRestoredEvent), WindowRestoredEvent::GetStaticEventType());
 
         ServiceLocator::Get()->AddService(MultiPlatformWindow::Get(), IWindow::k_ServiceName);
-        ServiceLocator::Get()->GetServiceByType<MultiPlatformWindow>()->Initialize(wConfig);
+        ServiceLocator::Get()->GetServiceByType<MultiPlatformWindow>()->Initialize(wConfig);        
+
+        RAW_INFO("Initializing Input...");
+        ServiceLocator::Get()->AddService(Input::Get(), Input::k_ServiceName);
+        ServiceLocator::Get()->GetServiceByType<Input>()->InitializeInput();
 
         auto windowSize = MultiPlatformWindow::Get()->GetWindowSize();
         auto maxWindowSize = MultiPlatformWindow::Get()->GetMaxWindowSize();
@@ -89,6 +93,7 @@ namespace Raw
     
     void Application::Shutdown()
     {
+        ServiceLocator::Get()->GetService(Input::k_ServiceName)->Shutdown();
         ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName)->Shutdown();
         ServiceLocator::Get()->GetService(IWindow::k_ServiceName)->Shutdown();
      
