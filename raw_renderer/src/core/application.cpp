@@ -9,6 +9,7 @@
 #include "core/job_system.hpp"
 #include "resources/resource_manager.hpp"
 #include "resources/texture_loader.hpp"
+#include "resources/buffer_loader.hpp"
 
 namespace Raw
 {
@@ -60,7 +61,9 @@ namespace Raw
         ResourceManager::Get()->Init();
 
         TextureLoader::Instance()->Init();
+        BufferLoader::Instance()->Init();
         ResourceManager::Get()->SetLoader(TextureResource::k_ResourceType, TextureLoader::Instance());
+        ResourceManager::Get()->SetLoader(BufferResource::k_ResourceType, BufferLoader::Instance());
 
 
         m_Suspended = false;
