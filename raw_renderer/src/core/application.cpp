@@ -7,6 +7,8 @@
 #include "events/event_manager.hpp"
 #include "core/timer.hpp"
 #include "core/job_system.hpp"
+#include "resources/resource_manager.hpp"
+#include "resources/texture_loader.hpp"
 
 namespace Raw
 {
@@ -54,6 +56,13 @@ namespace Raw
         ServiceLocator::Get()->GetServiceByType<GFX::VulkanGFXDevice>()->InitializeDevice(dConfig);
         ServiceLocator::Get()->GetServiceByType<GFX::VulkanGFXDevice>()->InitializeEditor();
 
+        RAW_INFO("Initializing ResourceManager...");
+        ResourceManager::Get()->Init();
+
+        TextureLoader::Instance()->Init();
+        ResourceManager::Get()->SetLoader(TextureResource::k_ResourceType, TextureLoader::Instance());
+
+
         m_Suspended = false;
     }
     
@@ -93,6 +102,8 @@ namespace Raw
     
     void Application::Shutdown()
     {
+        RAW_INFO("ResourceManager shutting down...");
+        ResourceManager::Get()->Shutdown();
         ServiceLocator::Get()->GetService(Input::k_ServiceName)->Shutdown();
         ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName)->Shutdown();
         ServiceLocator::Get()->GetService(IWindow::k_ServiceName)->Shutdown();
