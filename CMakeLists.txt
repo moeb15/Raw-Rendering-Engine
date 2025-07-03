@@ -6,6 +6,10 @@ add_subdirectory(external/SDL)
 add_subdirectory(external/glm)
 add_subdirectory(external/vma)
 
+set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(external/tinygltf)
+
 find_package(Vulkan REQUIRED)
 
 file(GLOB SOURCES
@@ -37,6 +41,8 @@ target_include_directories(${PROJECT_NAME}
         SDL3
         VulkanMemoryAllocator
         "external/imgui"
+        "external/wyhash"
+        "external/tinygltf"
 )
 
 target_link_libraries(${PROJECT_NAME}
