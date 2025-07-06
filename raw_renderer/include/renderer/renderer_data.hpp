@@ -4,6 +4,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <unordered_map>
 
 namespace Raw::GFX
 {
@@ -32,6 +33,15 @@ namespace Raw::GFX
         f32 texCoordV;
     };
 
+    struct GPUTechnique
+    {
+        union
+        {
+            GraphicsPipelineHandle gfxPipeline;
+            ComputePipelineHandle computePipeline;
+        } handle;
+    };
+
     struct PBRMaterialData
     {
         i32 diffuse{ -1 };
@@ -47,26 +57,21 @@ namespace Raw::GFX
 
     struct MeshData
     {
-        u64 meshId;
-        u32 indexCount;
-        u32 firstIndex;
-        u32 materialIndex;
-        glm::vec3 rotation{ 0.f };
-        glm::vec3 translation{ 0.f };
-        glm::vec3 scale{ 1.f };
-    };
-
-    struct NodeData
-    {
-        u64 vertexId;
-        u64 indexId;
-        glm::mat4 transform;
-        std::vector<MeshData> meshes;
+        u32 indexCount{ 0 };
+        u32 firstIndex{ 0 };
+        u32 vertexOffset{ 0 };
+        u32 materialIndex{ 0 };
+        u32 transformIndex{ 0 };
+        u32 instanceCount{ 0 };
+        u32 baseInstance{ 0 };
     };
 
     struct SceneData
     {
-        std::vector<NodeData> nodes;
+        u64 vertexBuffer;
+        u64 indexBuffer;
+        std::vector<MeshData> meshes;
+        std::unordered_map<u64, u32> meshLookup;
         std::vector<u32> images;
         std::vector<u32> textures;
         std::vector<PBRMaterialData> materials;
