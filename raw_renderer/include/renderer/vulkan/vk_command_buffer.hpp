@@ -29,6 +29,7 @@ namespace Raw::GFX
         virtual void EndRendering() override;
         virtual void Draw(u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance) override;
         virtual void DrawIndexed(u32 indexCount, u32 instanceCount, u32 firstIndex, i32 vertexOffset, u32 firstInstance) override;
+        virtual void DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount) override;
         virtual void BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform = glm::mat4(1.f), PBRMaterialData materialData = {}) override;
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) override;
 

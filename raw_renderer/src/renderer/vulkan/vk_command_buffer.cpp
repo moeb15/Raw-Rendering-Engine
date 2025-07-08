@@ -306,4 +306,10 @@ namespace Raw::GFX
         VulkanBuffer* buffer = VulkanGFXDevice::Get()->GetBuffer(indexBuffer);
         vkCmdBindIndexBuffer(vulkanCmdBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
+
+    void VulkanCommandBuffer::DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount)
+    {
+        VulkanBuffer* iBuffer = VulkanGFXDevice::Get()->GetBuffer(indirectBuffer);
+        vkCmdDrawIndexedIndirect(vulkanCmdBuffer, iBuffer->buffer, offset, drawCount, sizeof(VkDrawIndexedIndirectCommand));
+    }
 }
