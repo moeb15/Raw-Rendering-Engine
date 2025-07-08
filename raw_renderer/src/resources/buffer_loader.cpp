@@ -50,7 +50,7 @@ namespace Raw
         }
 
         m_BufferMap.insert(std::pair<u64, std::unique_ptr<BufferResource>>(hashedName, std::move(res)));
-        return res.get();
+        return m_BufferMap[hashedName].get();
     }
 
     Resource* BufferLoader::Get(cstring name)

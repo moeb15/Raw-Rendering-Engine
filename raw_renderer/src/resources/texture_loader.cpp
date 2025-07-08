@@ -107,7 +107,7 @@ namespace Raw
 
         m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
 
-        return tex.get();
+        return m_TextureMap[hashedName].get();
     }
 
     Resource* TextureLoader::CreateFromData(cstring name, const GFX::TextureDesc& desc, void* data)
@@ -124,6 +124,6 @@ namespace Raw
         tex->AddRef();
 
         m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
-        return tex.get();
+        return m_TextureMap[hashedName].get();
     }
 }
