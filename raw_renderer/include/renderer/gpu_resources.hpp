@@ -137,8 +137,9 @@ namespace Raw::GFX
         DEVICE_LOCAL,
     };
 
-    enum EBufferType : u8
+    enum EBufferType
     {
+        INVALID = 0,
         INDEX = 1 << 0,
         VERTEX = 1 << 1,
         UNIFORM = 1 << 2,
@@ -381,7 +382,7 @@ namespace Raw::GFX
 
     struct BufferDesc
     {
-        EBufferType type{ 0 };
+        u8 type{ EBufferType::INVALID };
         EMemoryType memoryType{ EMemoryType::DEVICE_LOCAL };
         u64 bufferSize{ 0 };
     };
@@ -453,5 +454,14 @@ namespace Raw::GFX
         u32 numUBOs{ 0 };
 
         cstring name{ nullptr };
+    };
+
+    struct IndirectDraw
+    {
+        u32 indexCount;
+        u32 instanceCount;
+        u32 firstIndex;
+        u32 vertexOffset;
+        u32 firstInstance;
     };
 }
