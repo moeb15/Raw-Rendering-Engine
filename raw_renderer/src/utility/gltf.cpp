@@ -17,7 +17,14 @@ namespace Raw::Utils
 {
     namespace
     {
-        void LoadNode(const Node& inputNode, Model& input, GFX::SceneData& outSceneData, glm::mat4 parentTransform, std::vector<GFX::VertexData>& vertices, std::vector<u32>& indices)
+        void LoadNode(
+            const Node& inputNode, 
+            Model& input,
+            GFX::SceneData& outSceneData, 
+            glm::mat4 parentTransform, 
+            std::vector<GFX::VertexData>& vertices, 
+            std::vector<u32>& indices, 
+            std::vector<GFX::IndirectDraw>& indirectDraws)
         {
             glm::mat4 curTransform = glm::mat4(1.f);
 
@@ -39,19 +46,19 @@ namespace Raw::Utils
                 curTransform = glm::make_mat4x4(inputNode.matrix.data());
             }
 
-            curTransform *= parentTransform;
+            curTransform = parentTransform * curTransform;
 
             outSceneData.transforms.push_back(curTransform);
             
-            /*
+            
             if(inputNode.children.size() > 0)
             {
                 for(u64 i = 0; i < inputNode.children.size(); i++)
                 {
                     const Node& childNode = input.nodes[inputNode.children[i]];
-                    LoadNode(childNode, input, outSceneData, curTransform, vertices, indices);
+                    LoadNode(childNode, input, outSceneData, curTransform, vertices, indices, indirectDraws);
                 }
-            }*/
+            }
             
             if(inputNode.mesh > -1)
             {
@@ -162,11 +169,20 @@ namespace Raw::Utils
                     mesh.instanceCount = 1;
                     mesh.transformIndex = (u32)outSceneData.transforms.size() - 1;
 
+                    GFX::IndirectDraw iDraw;
+                    iDraw.firstIndex = firstIndex;
+                    iDraw.indexCount = indexCount;
+                    iDraw.vertexOffset = 0;
+                    iDraw.instanceCount = 1;
+                    iDraw.firstInstance = 0;
+
+                    indirectDraws.push_back(iDraw);
+
                     outSceneData.meshes.push_back(mesh);
                 }
             }
         }
-        void LoadImages(Model& input, std::vector<u32>& images)
+        void LoadImages(Model& input, std::vector<u32>& images, std::vector<u64>& imageIds)
         {
             for(u64 i = 0; i < input.images.size(); i++)
             {
@@ -200,6 +216,8 @@ namespace Raw::Utils
 
                     TextureResource* tex = (TextureResource*)TextureLoader::Instance()->CreateFromData(glTFImage.uri.c_str(), desc, buffer);
                     images.push_back(tex->handle.id);
+                    imageIds.push_back(tex->textureId);
+                    tex->AddRef();
 
                     free(buffer);
                 }
@@ -219,7 +237,12 @@ namespace Raw::Utils
                     desc.format = GFX::ETextureFormat::R8G8B8A8_UNORM;
 
                     TextureResource* tex = (TextureResource*)TextureLoader::Instance()->CreateFromData(glTFImage.uri.c_str(), desc, buffer);
-                    if(tex) images.push_back(tex->handle.id);
+                    if(tex)
+                    { 
+                        images.push_back(tex->handle.id);
+                        imageIds.push_back(tex->textureId);
+                        tex->AddRef();
+                    }
                 }
             }
         }
@@ -275,7 +298,7 @@ namespace Raw::Utils
 
         u64 startTime = Timer::Get()->Now();
 
-        JobSystem::Execute([&](){ LoadImages(model, outScene.images); });
+        JobSystem::Execute([&](){ LoadImages(model, outScene.images, outScene.imageIds); });
         JobSystem::Execute([&](){ LoadTextures(model, outScene.textures); });
         JobSystem::Execute([&](){ LoadMaterials(model, outScene.materials);});
 
@@ -284,11 +307,12 @@ namespace Raw::Utils
             {
                 std::vector<GFX::VertexData> vertices;
                 std::vector<u32> indices;
+                std::vector<GFX::IndirectDraw> indirectDraws;
 
                 for(u64 i = 0; i < model.nodes.size(); i++)
                 {
                     Node& curNode = model.nodes[i];
-                    LoadNode(curNode, model, outScene, glm::mat4(1.f), vertices, indices);
+                    LoadNode(curNode, model, outScene, glm::mat4(1.f), vertices, indices, indirectDraws);
                 }
 
                 GFX::BufferDesc vertexDesc;
@@ -301,13 +325,29 @@ namespace Raw::Utils
                 indexDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
                 indexDesc.type = GFX::EBufferType::INDEX;
 
+                GFX::BufferDesc indirectDesc;
+                indirectDesc.bufferSize = indirectDraws.size() * sizeof(GFX::IndirectDraw);
+                indirectDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
+                indirectDesc.type = GFX::EBufferType::INDIRECT | GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST | GFX::EBufferType::SHADER_DEVICE_ADDRESS;
+
                 std::string vBufferName = filepath + "_vertex";
                 std::string iBufferName = filepath + "_index";
-                BufferResource vRes = *(BufferResource*)BufferLoader::Instance()->CreateBuffer(vBufferName.c_str(), vertexDesc, vertices.data());
-                BufferResource iRes = *(BufferResource*)BufferLoader::Instance()->CreateBuffer(iBufferName.c_str(), indexDesc, indices.data());
+                std::string indirectBufferName = filepath + "_indirect";
+                BufferResource* vRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(vBufferName.c_str(), vertexDesc, vertices.data());
+                BufferResource* iRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(iBufferName.c_str(), indexDesc, indices.data());
+                BufferResource* indirectRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(indirectBufferName.c_str(), indirectDesc, indirectDraws.data());
                 
-                outScene.vertexBuffer = vRes.buffer;
-                outScene.indexBuffer = iRes.buffer;
+                outScene.vertexBuffer = vRes->buffer;
+                vRes->AddRef();
+                outScene.indexBuffer = iRes->buffer;
+                iRes->AddRef();
+                outScene.indirectBuffer = indirectRes->buffer;
+                indirectRes->AddRef();
+
+                outScene.vertexBufferId = vRes->bufferId;
+                outScene.indexBufferId = iRes->bufferId;
+                outScene.indirectBufferId = indirectRes->bufferId;
+                outScene.drawCount = (u32)indirectDraws.size();
             }
         );
 
