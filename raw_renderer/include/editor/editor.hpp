@@ -1,0 +1,17 @@
+#pragma once
+
+#include "core/defines.hpp"
+#include "renderer/renderer_data.hpp"
+
+union SDL_Event;
+
+namespace Raw
+{
+    class Editor
+    {
+    public:
+        static Editor* Get();
+        void ProcessEvent(SDL_Event* event);
+        void Render(f32 dt, GFX::SceneData& sceneData, GFX::GlobalSceneData& globalData);
+    };
+}
