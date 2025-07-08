@@ -67,9 +67,16 @@ namespace Raw::GFX
     {
         BufferHandle vertexBuffer;
         BufferHandle indexBuffer;
+        BufferHandle indirectBuffer;
+        u64 vertexBufferId;
+        u64 indexBufferId;
+        u64 indirectBufferId;
+
+        u32 drawCount{ 0 };
         std::vector<MeshData> meshes;
         std::unordered_map<u64, u32> meshLookup;
         std::vector<u32> images;
+        std::vector<u64> imageIds;
         std::vector<u32> textures;
         std::vector<PBRMaterialData> materials;
         std::vector<glm::mat4> transforms;
