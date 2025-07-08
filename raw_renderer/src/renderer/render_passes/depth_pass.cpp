@@ -52,39 +52,31 @@ namespace Raw::GFX
 
     void DepthPass::ExecuteAsync(IGFXDevice* device, SceneData* scene)
     {
-        /*
-         JobSystem::Execute([&]()
+        JobSystem::Execute([&]()
             {
-                ICommandBuffer* curCmd = device->GetCommandBuffer();
-                curCmd->BeginCommandBuffer();
+                ICommandBuffer* cmd = device->GetCommandBuffer();
+                cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
+                cmd->BeginRendering(technique.gfxPipeline, true, false, true);
+                cmd->BindPipeline(technique.gfxPipeline);
 
-                for(u32 i = 0; i < scene->nodes.Size(); i++)
+                for(u32 i = 0; i < scene->meshes.size(); i++)
                 {
-                    NodeData& node = scene->nodes[i];
-                    
-                    BufferResource* vRes = (BufferResource*)BufferLoader::Instance()->Get(node.vertexId);
-                    BufferResource* iRes = (BufferResource*)BufferLoader::Instance()->Get(node.indexId);
+                    MeshData mesh = scene->meshes[i];
+                    glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
+                
+                    cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform);
+                    cmd->BindIndexBuffer(scene->indexBuffer);
+                        
+                    PBRMaterialData& material = scene->materials[mesh.materialIndex];
+                    if(material.isTransparent) continue;
 
-                    if(vRes && iRes)
-                    {
-                        curCmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
-        
-                        curCmd->BeginRendering(technique.gfxPipeline, true, false, true);
-                        curCmd->BindPipeline(technique.gfxPipeline);
-                        curCmd->BindVertexBuffer(vRes->buffer, node.transform);
-                        curCmd->BindIndexBuffer(iRes->buffer);
-                        for(u32 j = 0; j < node.meshes.Size(); j++)
-                        {
-                            MeshData& mesh = node.meshes[j];
-                            curCmd->DrawIndexed(mesh.indexCount, 1, mesh.firstIndex, 0, 0);
-                        }
-                    }
+                    cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
                 }
 
-                curCmd->EndRendering();
+                cmd->EndRendering();
 
-                device->SubmitCommandBuffer(curCmd);
+                device->SubmitCommandBuffer(cmd);
             }
-        );*/
+        );
     }  
 }

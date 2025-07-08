@@ -35,11 +35,8 @@ namespace Raw::GFX
 
     struct GPUTechnique
     {
-        union
-        {
-            GraphicsPipelineHandle gfxPipeline;
-            ComputePipelineHandle computePipeline;
-        } handle;
+        GraphicsPipelineHandle gfxPipeline;
+        ComputePipelineHandle computePipeline;
     };
 
     struct PBRMaterialData
@@ -68,12 +65,13 @@ namespace Raw::GFX
 
     struct SceneData
     {
-        u64 vertexBuffer;
-        u64 indexBuffer;
+        BufferHandle vertexBuffer;
+        BufferHandle indexBuffer;
         std::vector<MeshData> meshes;
         std::unordered_map<u64, u32> meshLookup;
         std::vector<u32> images;
         std::vector<u32> textures;
         std::vector<PBRMaterialData> materials;
+        std::vector<glm::mat4> transforms;
     };
 }

@@ -10,9 +10,14 @@
 #include "resources/resource_manager.hpp"
 #include "resources/texture_loader.hpp"
 #include "resources/buffer_loader.hpp"
+#include "scene/scene.hpp"
+#include "renderer/renderer.hpp"
 
 namespace Raw
 {
+    Scene* testScene = nullptr;
+    GFX::Renderer* activeRenderPath = nullptr;
+
     void Application::Initialize(const ApplicationConfig& config)
     {
         RAW_INFO("Initializing Application...");
@@ -65,6 +70,19 @@ namespace Raw
         ResourceManager::Get()->SetLoader(TextureResource::k_ResourceType, TextureLoader::Instance());
         ResourceManager::Get()->SetLoader(BufferResource::k_ResourceType, BufferLoader::Instance());
 
+        std::string gltfScene = "C:/Users/Mujta/VSCode Projects/raw/assets/GLTF/Sponza/glTF/Sponza.gltf";
+
+        testScene = new Scene();
+        testScene->Init(gltfScene);
+
+        activeRenderPath = new GFX::Renderer();
+        activeRenderPath->Init();
+
+        glm::vec3 pos(0.0f, 0.0f, 1.f);
+        glm::vec3 target(0.0f,0.0f, 0.f);
+        glm::vec3 up(0.f,1.f,0.0f);
+        m_Camera = new GFX::Camera();
+        m_Camera->Init(0.1f, 1000.f, 75.f, 16.f / 9.f, pos, target, up);
 
         m_Suspended = false;
     }
@@ -80,16 +98,8 @@ namespace Raw
         {
             if(!m_Suspended)
             {
-                GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
-
-                device->BeginOverlay();
-                device->BeginFrame();
-
-                GFX::ICommandBuffer* cmd = device->GetCommandBuffer();
-                cmd->BeginCommandBuffer();
-                cmd->Clear({ 1.f, 0.f, 0.f, 1.f });
-
-                device->EndFrame();
+                m_Camera->Update(deltaTime);
+                activeRenderPath->Render(testScene->GetSceneData(), *m_Camera, deltaTime);
 
                 endTime = Timer::Get()->Now();
                 deltaTime = Timer::Get()->DeltaSeconds(curTime, endTime);
@@ -105,6 +115,13 @@ namespace Raw
     
     void Application::Shutdown()
     {
+        activeRenderPath->Shutdown();
+        testScene->Shutdown();
+
+        delete activeRenderPath;
+        delete testScene;
+        delete m_Camera;
+
         RAW_INFO("ResourceManager shutting down...");
         ResourceManager::Get()->Shutdown();
         ServiceLocator::Get()->GetService(Input::k_ServiceName)->Shutdown();
