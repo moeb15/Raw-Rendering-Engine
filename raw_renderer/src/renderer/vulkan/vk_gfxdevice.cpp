@@ -1323,8 +1323,6 @@ namespace Raw::GFX
 
     BufferHandle VulkanGFXDevice::CreateBuffer(const BufferDesc& desc)
     {
-
-
         BufferHandle handle = { resCache.buffers.ObtainResource() };
         if(!handle.IsValid())
         {
@@ -1339,7 +1337,7 @@ namespace Raw::GFX
         // we use buffer device addresses for vertex buffers
         if(desc.type & EBufferType::VERTEX)
         {
-            flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+            flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         }
         if(desc.type & EBufferType::INDEX)
         {
@@ -1768,6 +1766,8 @@ namespace Raw::GFX
         gfxPipeline->imageAttachements = desc.imageAttachments;
         gfxPipeline->numImageAttachments = desc.numImageAttachments;
         gfxPipeline->depthAttachment = desc.depthAttachment;
+        // TODO: allow for custom layouts for each pipeline, first need to create DSLayout handle 
+        gfxPipeline->dsLayout = VK_NULL_HANDLE;
 
         for(u32 i = 0; i < numShaders; i++)
         {
