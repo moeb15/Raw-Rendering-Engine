@@ -6,6 +6,7 @@
 #include "core/job_system.hpp"
 
 #include "renderer/render_passes/depth_pass.hpp"
+#include "renderer/render_passes/forward_pass.hpp"
 
 namespace Raw::GFX
 {
@@ -18,6 +19,9 @@ namespace Raw::GFX
 
         m_DepthPass = new DepthPass();
         m_DepthPass->Init(device);
+
+        m_ForwardPass = new ForwardPass();
+        m_ForwardPass->Init(device);
         
         BufferDesc sceneDataDesc;
         sceneDataDesc.bufferSize = sizeof(GlobalSceneData);
@@ -61,6 +65,7 @@ namespace Raw::GFX
         cmd->Clear(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
 
         m_DepthPass->Execute(device, cmd, scene);
+        m_ForwardPass->Execute(device, cmd, scene);
 
         device->EndFrame();
     }
