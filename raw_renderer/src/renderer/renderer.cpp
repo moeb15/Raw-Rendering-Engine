@@ -4,6 +4,7 @@
 #include "renderer/command_buffer.hpp"
 #include "resources/buffer_loader.hpp"
 #include "core/job_system.hpp"
+#include "editor/editor.hpp"
 
 #include "renderer/render_passes/depth_pass.hpp"
 #include "renderer/render_passes/forward_pass.hpp"
@@ -57,6 +58,8 @@ namespace Raw::GFX
         device->UnmapBuffer(m_SceneDataBuffer, true);
         
         device->BeginOverlay();
+        Editor::Get()->Render(dt, *scene, sceneData);
+        
         device->BeginFrame();
         
         ICommandBuffer* cmd = device->GetCommandBuffer();
