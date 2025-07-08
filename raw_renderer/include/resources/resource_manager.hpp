@@ -23,6 +23,7 @@ namespace Raw
         virtual Resource* Get(cstring name) = 0;
         virtual Resource* Get(u64 hashedName) = 0;
         virtual void Unload(cstring name) = 0;
+        virtual void Unload(u64 hashedName) = 0;
         virtual Resource* CreateFromFile(cstring name, cstring filename) { return nullptr; }
     };
 

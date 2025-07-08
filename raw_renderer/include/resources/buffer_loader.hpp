@@ -27,6 +27,7 @@ namespace Raw
         virtual Resource* Get(cstring name) override;
         virtual Resource* Get(u64 hashedName) override;
         virtual void Unload(cstring name) override;
+        virtual void Unload(u64 hashedName) override;
 
     private:
         std::unordered_map<u64, std::unique_ptr<BufferResource>> m_BufferMap;

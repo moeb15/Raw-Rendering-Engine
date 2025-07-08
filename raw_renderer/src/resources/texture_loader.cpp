@@ -76,6 +76,23 @@ namespace Raw
         RAW_DEBUG("TextureLoader could not unload texture '%s'", name);
     }
 
+    void TextureLoader::Unload(u64 hashedName)
+    {
+        if(m_TextureMap.find(hashedName) != m_TextureMap.end())
+        {
+            m_TextureMap[hashedName]->RemoveRef();
+            if(m_TextureMap[hashedName]->refs == 0)
+            {
+                GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
+                TextureResource* res = m_TextureMap[hashedName].get();
+                device->DestroyTexture(res->handle);
+
+                m_TextureMap.erase(hashedName);
+            }
+        }
+        RAW_DEBUG("TextureLoader could not unload texture ID '%llu'", hashedName);
+    }
+
     Resource* TextureLoader::CreateFromFile(cstring name, cstring filename)
     {
         u64 hashedName = Utils::HashCString(name);

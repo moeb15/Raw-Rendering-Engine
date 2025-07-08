@@ -94,4 +94,20 @@ namespace Raw
             }
         }
     }
+
+    void BufferLoader::Unload(u64 hashedName)
+    {
+        if(m_BufferMap.find(hashedName) != m_BufferMap.end())
+        {
+            m_BufferMap[hashedName]->RemoveRef();
+            if(m_BufferMap[hashedName]->refs == 0)
+            {
+                GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
+                BufferResource* res = m_BufferMap[hashedName].get();
+                device->DestroyBuffer(res->buffer);
+
+                m_BufferMap.erase(hashedName);
+            }
+        }
+    }
 }
