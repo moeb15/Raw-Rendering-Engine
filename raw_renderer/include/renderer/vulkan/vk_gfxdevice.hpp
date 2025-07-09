@@ -79,6 +79,7 @@ namespace Raw::GFX
 
         virtual void BeginFrame() override;
         virtual void EndFrame() override;
+        virtual u32 GetMaximumPushConstantSize() override { return 128; }
 
         RAW_INLINE VkDevice GetDevice() { return m_LogicalDevice; }
         RAW_INLINE VmaAllocator GetAllocator() { return m_VmaAllocator; }
@@ -90,7 +91,7 @@ namespace Raw::GFX
         virtual ICommandBuffer* GetCommandBuffer(bool begin = false) override;
         virtual ICommandBuffer* GetSecondaryCommandBuffer() override;
         virtual void MapBuffer(const BufferHandle& handle, void* data, u64 dataSize) override;
-        virtual void UnmapBuffer(const BufferHandle& handle, bool isSceneData = false) override;
+        virtual void UnmapBuffer(const BufferHandle& handle, EBufferMapType type = EBufferMapType::BINDLESS) override;
         virtual void MapTexture(const TextureHandle& handle, bool isBindless = true) override;
         virtual TextureHandle& GetDrawImageHandle() override;
         virtual TextureHandle& GetDepthBufferHandle() override;

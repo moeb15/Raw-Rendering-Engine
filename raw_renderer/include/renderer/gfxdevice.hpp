@@ -23,6 +23,13 @@ namespace Raw::GFX
 
     class ICommandBuffer;
 
+    enum class EBufferMapType
+    {
+        BINDLESS,
+        SCENE,
+        MATERIAL,
+    };
+
     class IGFXDevice : public IService
     {
     public:
@@ -34,11 +41,12 @@ namespace Raw::GFX
 
         virtual void BeginFrame() = 0;
         virtual void EndFrame() = 0;
+        virtual u32 GetMaximumPushConstantSize() = 0;
 
         virtual ICommandBuffer* GetCommandBuffer(bool begin = false) = 0;
         virtual ICommandBuffer* GetSecondaryCommandBuffer() = 0;
         virtual void MapBuffer(const BufferHandle& handle, void* data, u64 dataSize) = 0;
-        virtual void UnmapBuffer(const BufferHandle& handle, bool isSceneData = false) = 0;
+        virtual void UnmapBuffer(const BufferHandle& handle, EBufferMapType type = EBufferMapType::BINDLESS) = 0;
         virtual void MapTexture(const TextureHandle& handle, bool isBindless = true) = 0;
         virtual TextureHandle& GetDrawImageHandle() = 0;
         virtual TextureHandle& GetDepthBufferHandle() = 0;

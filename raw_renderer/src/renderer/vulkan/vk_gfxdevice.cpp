@@ -999,14 +999,14 @@ namespace Raw::GFX
         memcpy(mappedData, data, dataSize);
     }
 
-    void VulkanGFXDevice::UnmapBuffer(const BufferHandle& handle, bool isSceneData)
+    void VulkanGFXDevice::UnmapBuffer(const BufferHandle& handle, EBufferMapType type)
     {
         VulkanBuffer* buffer = GetBuffer(handle);
         vmaUnmapMemory(m_VmaAllocator, buffer->allocation);
 
         if(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
         {
-            if(isSceneData)
+            if(type == EBufferMapType::SCENE)
             {
                 frameManager.sceneDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
             }
@@ -1337,7 +1337,7 @@ namespace Raw::GFX
         // we use buffer device addresses for vertex buffers
         if(desc.type & EBufferType::VERTEX)
         {
-            flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+            flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         }
         if(desc.type & EBufferType::INDEX)
         {
@@ -2160,8 +2160,5 @@ namespace Raw::GFX
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
-
-        static bool demo = true;
-        ImGui::ShowDemoWindow(&demo);
     }
 }
