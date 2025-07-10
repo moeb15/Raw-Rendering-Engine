@@ -1,5 +1,8 @@
 #version 460
 #extension GL_EXT_buffer_reference : require
+#extension GL_GOOGLE_include_directive : require
+
+#include "common.glsl"
 
 layout (location = 1) out vec2 outUV;
 layout (location = 2) out uvec4 outTextures;
@@ -11,17 +14,6 @@ layout (location = 7) out float outCutoff;
 layout (location = 8) out vec2 outRmFactor;
 layout (location = 9) out vec4 outBaseColorFactor;
 layout (location = 10) out vec4 outLightPos;
-
-layout (set = 0, binding = 0) uniform sceneData{
-	mat4 view;	
-	mat4 proj;	
-	mat4 viewProj;	
-	mat4 lightView;
-	mat4 lightProj;
-	vec4 lightDir;
-	float lightIntensity;
-	uint shadowMapIndex;
-} GlobalSceneData;
 
 struct Vertex{
 	vec3 position;

@@ -1,16 +1,8 @@
 #version 460
 #extension GL_EXT_buffer_reference : require
+#extension GL_GOOGLE_include_directive : require
 
-layout (set = 0, binding = 0) uniform sceneData{
-	mat4 view;	
-	mat4 proj;	
-	mat4 viewProj;
-	mat4 lightView;
-	mat4 lightProj;
-	vec4 lightDir;
-	float lightIntensity;
-	uint shadowMapIndex;
-} GlobalSceneData;
+#include "common.glsl"
 
 struct Vertex{
 	vec3 position;
