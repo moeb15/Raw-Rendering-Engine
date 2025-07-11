@@ -45,11 +45,12 @@ namespace Raw::GFX
         i32 roughness{ -1 };
         i32 normal{ -1 };
         i32 occlusion{ -1 };
-        i32 emissive{ -1 };
-        glm::vec4 baseColorFactor{ 1.f, 1.f, 1.f, 1.f };
         glm::vec2 metalRoughnessFactor{ 1.f, 1.f };
-        f32 alphaCutoff{ 1.f };
-        bool isTransparent{ false };
+        i32 emissive{ -1 };
+        f32 alphaCutoff{ 0.f };
+        glm::vec4 baseColorFactor{ 1.f, 1.f, 1.f, 1.f };
+        u32 isTransparent{ false };
+        glm::vec3 padding;
     };
 
     struct MeshData
