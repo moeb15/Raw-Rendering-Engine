@@ -2,6 +2,7 @@
 
 #include "core/defines.hpp"
 #include "renderer/renderer_data.hpp"
+#include "renderer/gfxdevice.hpp"
 #include "scene/scene_graph.hpp"
 #include <string>
 #include <memory>
@@ -16,13 +17,16 @@ namespace Raw
         Scene() {}
         ~Scene() {}
 
-        void Init(std::string& filePath);
+        void Init(std::string& filePath, GFX::IGFXDevice* device);
         void Shutdown();
+        void Update(GFX::IGFXDevice* device);
 
         GFX::SceneData* GetSceneData() const { return m_SceneData.get(); }
+        GFX::BufferHandle GetSceneMaterials() const { return m_MaterialDataBuffer; }
 
     private:
         std::string m_Filepath{ "" };
         std::unique_ptr<GFX::SceneData> m_SceneData{ nullptr };
+        GFX::BufferHandle m_MaterialDataBuffer;
     };
 }
