@@ -47,6 +47,7 @@ namespace Raw::GFX
         virtual ICommandBuffer* GetSecondaryCommandBuffer() = 0;
         virtual void MapBuffer(const BufferHandle& handle, void* data, u64 dataSize) = 0;
         virtual void UnmapBuffer(const BufferHandle& handle, EBufferMapType type = EBufferMapType::BINDLESS) = 0;
+        virtual void WriteBuffer(const BufferHandle& handle, EBufferMapType type = EBufferMapType::BINDLESS) = 0;
         virtual void MapTexture(const TextureHandle& handle, bool isBindless = true) = 0;
         virtual TextureHandle& GetDrawImageHandle() = 0;
         virtual TextureHandle& GetDepthBufferHandle() = 0;
