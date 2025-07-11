@@ -603,6 +603,34 @@ namespace Raw::GFX
             VK_CHECK(vkAllocateDescriptorSets(m_LogicalDevice, &sceneAllocInfo, &m_SceneDataSet[i]));
         }
 
+        // initialize material data pool
+        VkDescriptorPoolSize mSize;
+        mSize.descriptorCount = 1;
+        mSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+        VkDescriptorPoolCreateInfo materialDataPool = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+        materialDataPool.maxSets = MAX_SWAPCHAIN_IMAGES * 10;
+        materialDataPool.poolSizeCount = 1;
+        materialDataPool.pPoolSizes = &mSize;
+
+        VK_CHECK(vkCreateDescriptorPool(m_LogicalDevice, &materialDataPool, m_AllocCallbacks, &m_MaterialDataPool));
+
+        VulkanDescriptorLayoutBuilder matBuilder;
+        matBuilder.Init();
+        matBuilder.AddBinding(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_MaterialDataLayout = matBuilder.Build();
+        matBuilder.Shutdown();
+
+        VkDescriptorSetAllocateInfo materialAllocInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        materialAllocInfo.descriptorPool = m_MaterialDataPool;
+        materialAllocInfo.descriptorSetCount = 1;
+        materialAllocInfo.pSetLayouts = &m_MaterialDataLayout;
+
+        for(u32 i = 0; i < m_SwapchainImageCount; i++)
+        {
+            VK_CHECK(vkAllocateDescriptorSets(m_LogicalDevice, &materialAllocInfo, &m_MaterialDataSet[i]));
+        }
+
         // initialize default descriptor pool
         VkDescriptorPoolSize defaultPoolSizes[] =
         {
@@ -712,6 +740,7 @@ namespace Raw::GFX
 
         SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (u64)m_BindlessLayout, "Bindless Descriptor Layout");
         SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (u64)m_SceneLayout, "SceneData Descriptor Layout");
+        SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (u64)m_MaterialDataLayout, "MaterialData Descriptor Layout");
         SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (u64)m_BindlessSet, "Bindless Descriptor Set");
 
         for(u32 i = 0; i < m_SwapchainImageCount; i++)
@@ -719,6 +748,13 @@ namespace Raw::GFX
             cstring index = std::to_string(i).c_str();
             std::string fullName = "SceneData Descriptor Set: " + std::to_string(i); 
             SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (u64)m_SceneDataSet[i], fullName.c_str());
+        }
+
+        for(u32 i = 0; i < m_SwapchainImageCount; i++)
+        {
+            cstring index = std::to_string(i).c_str();
+            std::string fullName = "MaterialDat Descriptor Set: " + std::to_string(i); 
+            SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (u64)m_MaterialDataSet[i], fullName.c_str());
         }
     }
 
@@ -798,6 +834,10 @@ namespace Raw::GFX
         RAW_INFO("Destroy Vulkan SceneData Pool and Layout.");
         vkDestroyDescriptorSetLayout(m_LogicalDevice, m_SceneLayout, m_AllocCallbacks);
         vkDestroyDescriptorPool(m_LogicalDevice, m_SceneDataPool, m_AllocCallbacks);
+
+        RAW_INFO("Destroy Vulkan MaterialData Pool and Layout.");
+        vkDestroyDescriptorSetLayout(m_LogicalDevice, m_MaterialDataLayout, m_AllocCallbacks);
+        vkDestroyDescriptorPool(m_LogicalDevice, m_MaterialDataPool, m_AllocCallbacks);
 
         RAW_INFO("Destroy Vulkan Default Descriptor Pool.");
         vkDestroyDescriptorPool(m_LogicalDevice, m_DefaultPool, m_AllocCallbacks);
@@ -880,6 +920,8 @@ namespace Raw::GFX
         frameManager.bindlessSetUpdates[m_CurFrame].UpdateSet(m_BindlessSet);
         // update scene data descriptor set
         frameManager.sceneDataUpdates[m_CurFrame].UpdateSet(m_SceneDataSet[m_CurFrame]);
+        // update material data descriptor set
+        frameManager.materialDataUpdates[m_CurFrame].UpdateSet(m_MaterialDataSet[m_CurFrame]);
         
         VkResult res = vkAcquireNextImageKHR(m_LogicalDevice, m_Swapchain, U64_MAX, m_ImageAcquiredSemaphore[m_CurFrame], VK_NULL_HANDLE, &m_SwapchainImageIndex);
         if(res == VK_ERROR_OUT_OF_DATE_KHR)
@@ -1006,13 +1048,55 @@ namespace Raw::GFX
 
         if(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
         {
-            if(type == EBufferMapType::SCENE)
+            switch(type)
             {
-                frameManager.sceneDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                case EBufferMapType::SCENE:
+                {
+                    frameManager.sceneDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
+                case EBufferMapType::MATERIAL:
+                {
+                    frameManager.materialDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
+                case EBufferMapType::BINDLESS:
+                {
+                    frameManager.bindlessSetUpdates[m_CurFrame].WriteBuffer(VULKAN_UBO_BINDING, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
             }
-            else
+        }
+        
+        if(buffer->usageFlags & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
+        {
+            frameManager.bindlessSetUpdates[m_CurFrame].WriteBuffer(VULKAN_SSBO_BINDING, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+        }
+    }
+
+    void VulkanGFXDevice::WriteBuffer(const BufferHandle& handle, EBufferMapType type)
+    {
+        VulkanBuffer* buffer = GetBuffer(handle);
+
+        if(buffer->usageFlags & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+        {
+            switch(type)
             {
-                frameManager.bindlessSetUpdates[m_CurFrame].WriteBuffer(VULKAN_UBO_BINDING, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                case EBufferMapType::SCENE:
+                {
+                    frameManager.sceneDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
+                case EBufferMapType::MATERIAL:
+                {
+                    frameManager.materialDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
+                case EBufferMapType::BINDLESS:
+                {
+                    frameManager.bindlessSetUpdates[m_CurFrame].WriteBuffer(VULKAN_UBO_BINDING, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
             }
         }
         
@@ -1445,7 +1529,7 @@ namespace Raw::GFX
             return handle;
         }
 
-        if(desc.computeShader.stage != EShaderStage::COMPUTE)
+        if(desc.computeShader.stage != EShaderStage::COMPUTE_STAGE)
         {
             RAW_ERROR("CreateComputePipeline requires a compute shader!");
             handle.id = INVALID_RESOURCE_HANDLE;
@@ -1575,10 +1659,8 @@ namespace Raw::GFX
         u32 numShaders = desc.sDesc.numStages;
         std::vector<VkShaderModule> shaderModules;
         shaderModules.resize(numShaders);
-        // VkShaderModule* shaderModules = (VkShaderModule*)RAW_ALLOCATE(sizeof(VkShaderModule) * numShaders, 1, EMemoryTag::MEMORY_TAG_RENDERER);
         std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
         shaderStages.resize(numShaders);
-        // VkPipelineShaderStageCreateInfo* shaderStages = (VkPipelineShaderStageCreateInfo*)RAW_ALLOCATE(sizeof(VkPipelineShaderStageCreateInfo) * numShaders, 1, EMemoryTag::MEMORY_TAG_RENDERER);
 
         u32 curShaderIndex = 0;
         for(u32 i = 0; i < MAX_SHADER_STAGES; i++)
@@ -1586,7 +1668,7 @@ namespace Raw::GFX
             ShaderDesc curShader = desc.sDesc.shaders[i];
             if(curShader.shaderName != nullptr)
             {
-                RAW_ASSERT_MSG(curShader.stage != EShaderStage::COMPUTE, "Cannot include compute shaders in graphics pipeline '%s'", desc.name);
+                RAW_ASSERT_MSG(curShader.stage != EShaderStage::COMPUTE_STAGE, "Cannot include compute shaders in graphics pipeline '%s'", desc.name);
                 VkShaderModule& curModule = shaderModules[curShaderIndex];
                 LoadShader(curShader, curModule);
                 
@@ -1600,29 +1682,28 @@ namespace Raw::GFX
         }
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        // use bindless descriptor set layout, scene data layout, and mesh data layout for all graphics pipelines
-
+        
+        // use bindless descriptor set layout, scene data layout, and material data layout for all graphics pipelines
+        std::vector<VkDescriptorSetLayout> layouts = { m_SceneLayout, m_BindlessLayout, m_MaterialDataLayout };
         if(desc.numImageAttachments > 0)
         {
-            VkDescriptorSetLayout layouts[] = { m_SceneLayout, m_BindlessLayout };
-            pipelineLayoutInfo.pSetLayouts = layouts;
-            pipelineLayoutInfo.setLayoutCount = (u32)ArraySize(layouts);
+            pipelineLayoutInfo.pSetLayouts = layouts.data();
+            pipelineLayoutInfo.setLayoutCount = (u32)layouts.size();
         }
         else
         {
-            VkDescriptorSetLayout layouts[] = { m_SceneLayout };
-            pipelineLayoutInfo.pSetLayouts = layouts;
-            pipelineLayoutInfo.setLayoutCount = (u32)ArraySize(layouts);
+            pipelineLayoutInfo.pSetLayouts = &m_SceneLayout;
+            pipelineLayoutInfo.setLayoutCount = 1;
         }
         // push constants
+        VkPushConstantRange pc = {};
         if(desc.pushConstant.size > 0)
         {
-            VkPushConstantRange pConst = {};
-            pConst.offset = desc.pushConstant.offset;
-            pConst.size = desc.pushConstant.size;
-            pConst.stageFlags = vkUtils::ToVkShaderStage(desc.pushConstant.stage);
+            pc.offset = desc.pushConstant.offset;
+            pc.size = desc.pushConstant.size;
+            pc.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-            pipelineLayoutInfo.pPushConstantRanges = &pConst;
+            pipelineLayoutInfo.pPushConstantRanges = &pc;
             pipelineLayoutInfo.pushConstantRangeCount = 1;
         }
 
@@ -2027,49 +2108,49 @@ namespace Raw::GFX
         std::string fullName = desc.shaderName;
         switch(desc.stage)
         {
-            case EShaderStage::VERTEX:
+            case EShaderStage::VERTEX_STAGE:
             {
                 stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
                 fullName += ".vert.spv";
                 break;
             }
 
-            case EShaderStage::FRAGMENT:
+            case EShaderStage::FRAGMENT_STAGE:
             {
                 stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
                 fullName += ".frag.spv";
                 break;
             }
 
-            case EShaderStage::COMPUTE:
+            case EShaderStage::COMPUTE_STAGE:
             {
                 stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
                 fullName += ".comp.spv";
                 break;
             }
 
-            case EShaderStage::MESH:
+            case EShaderStage::MESH_STAGE:
             {
                 stageFlags = VK_SHADER_STAGE_MESH_BIT_EXT;
                 fullName += ".mesh.spv";
                 break;
             }
             
-            case EShaderStage::GEOM:
+            case EShaderStage::GEOM_STAGE:
             {
                 stageFlags = VK_SHADER_STAGE_GEOMETRY_BIT;
                 fullName += ".geom.spv";
                 break;
             }
             
-            case EShaderStage::TESS_EVAL:
+            case EShaderStage::TESS_EVAL_STAGE:
             {
                 stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
                 fullName += ".tse.spv";
                 break;
             }
             
-            case EShaderStage::TESS_CONTROL:
+            case EShaderStage::TESS_CONTROL_STAGE:
             {
                 stageFlags = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
                 fullName += ".tsc.spv";

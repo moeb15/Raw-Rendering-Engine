@@ -92,6 +92,7 @@ namespace Raw::GFX
         virtual ICommandBuffer* GetSecondaryCommandBuffer() override;
         virtual void MapBuffer(const BufferHandle& handle, void* data, u64 dataSize) override;
         virtual void UnmapBuffer(const BufferHandle& handle, EBufferMapType type = EBufferMapType::BINDLESS) override;
+        virtual void WriteBuffer(const BufferHandle& handle, EBufferMapType type = EBufferMapType::BINDLESS) override;
         virtual void MapTexture(const TextureHandle& handle, bool isBindless = true) override;
         virtual TextureHandle& GetDrawImageHandle() override;
         virtual TextureHandle& GetDepthBufferHandle() override;
@@ -195,6 +196,11 @@ namespace Raw::GFX
         VkDescriptorPool m_SceneDataPool{ VK_NULL_HANDLE };
         VkDescriptorSetLayout m_SceneLayout{ VK_NULL_HANDLE };
         VkDescriptorSet m_SceneDataSet[MAX_SWAPCHAIN_IMAGES]{};
+
+        // used for global material data
+        VkDescriptorPool m_MaterialDataPool{ VK_NULL_HANDLE };
+        VkDescriptorSetLayout m_MaterialDataLayout{ VK_NULL_HANDLE };
+        VkDescriptorSet m_MaterialDataSet[MAX_SWAPCHAIN_IMAGES]{};
 
         // default descriptor pool and mesh descriptor set/layout
         VkDescriptorPool m_DefaultPool{ VK_NULL_HANDLE };
