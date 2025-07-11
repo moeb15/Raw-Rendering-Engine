@@ -125,6 +125,23 @@ namespace Raw::GFX
         vkUtils::AddMemoryBarrier(vulkanCmdBuffer, srcVk, dstVk, srcVkP, dstVkP);
     }
 
+    void VulkanCommandBuffer::AddMemoryBarrier(const BufferHandle& buffer, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline)
+    {
+        VulkanBuffer* vBuffer = VulkanGFXDevice::Get()->GetBuffer(buffer);
+
+        VkBufferMemoryBarrier bufferBarrier = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
+        bufferBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        bufferBarrier.buffer = vBuffer->buffer;
+        bufferBarrier.offset = 0;
+        bufferBarrier.size = VK_WHOLE_SIZE;
+
+        VkPipelineStageFlags srcVkP = vkUtils::ToVkPipelineStageFlags(srcPipeline);
+        VkPipelineStageFlags dstVkP = vkUtils::ToVkPipelineStageFlags(dstPipeline);
+
+		vkCmdPipelineBarrier(vulkanCmdBuffer, srcVkP, dstVkP, 0, 0, nullptr, 1, &bufferBarrier, 0, nullptr);
+    }
+
     void VulkanCommandBuffer::BeginRendering(const GraphicsPipelineHandle& handle, bool useDepth, bool clearAttachments, bool writeDepth)
     {
         VulkanPipeline* gfxPipeline = VulkanGFXDevice::Get()->GetGraphicsPipeline(handle);
@@ -216,12 +233,12 @@ namespace Raw::GFX
         const u32 numAttachments = gfxPipeline->numImageAttachments;
         u32 curFrame = VulkanGFXDevice::Get()->m_CurFrame;
         VkDescriptorSet sceneDataSet = VulkanGFXDevice::Get()->m_SceneDataSet[curFrame];
-        //VkDescriptorSet meshDataSet = VulkanGFXDevice::Get()->m_MeshDataSet[curFrame];
         VkDescriptorSet bindlessSet = VulkanGFXDevice::Get()->m_BindlessSet;
+        VkDescriptorSet materialDataSet = VulkanGFXDevice::Get()->m_MaterialDataSet[curFrame];
         if(numAttachments > 0)
         {
-            VkDescriptorSet sets[] = { sceneDataSet, bindlessSet };
-            vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->pipelineLayout, 0, 2, sets, 0, nullptr);
+            VkDescriptorSet sets[] = { sceneDataSet, bindlessSet, materialDataSet };
+            vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->pipelineLayout, 0, 3, sets, 0, nullptr);
         }
         else
         {
@@ -266,7 +283,7 @@ namespace Raw::GFX
         vkCmdDrawIndexed(vulkanCmdBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
-    void VulkanCommandBuffer::BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform, PBRMaterialData materialData)
+    void VulkanCommandBuffer::BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform, u32 materialIndex)
     {
         // always bind a graphics pipeline first that has push contants, 
         // the push constant will contain the objects transform and
@@ -274,30 +291,17 @@ namespace Raw::GFX
         struct
         {
             glm::mat4 transform;
-            glm::uvec4 bindlessTextures;
-            u32 emissiveTexture;
-            f32 alphaCutoff;
-            glm::vec2 rmFactor;
-            glm::vec4 baseColorFactor;
+            u32 materialIndex;
             VkDeviceAddress vBuffer;
         } pushConstant;
 
-        VulkanBuffer* buffer = VulkanGFXDevice::Get()->GetBuffer(vertexBuffer);
-        pushConstant.transform = transform;
-        
-        pushConstant.bindlessTextures.x = materialData.diffuse;
-        pushConstant.bindlessTextures.y = materialData.normal;
-        pushConstant.bindlessTextures.z = materialData.roughness;
-        pushConstant.bindlessTextures.w = materialData.occlusion;
-        pushConstant.emissiveTexture = materialData.emissive;
-
-        pushConstant.baseColorFactor = materialData.baseColorFactor;
-        pushConstant.rmFactor = materialData.metalRoughnessFactor;
-        pushConstant.alphaCutoff = materialData.alphaCutoff;
-
         u32 pcSize = sizeof(pushConstant);
 
+        VulkanBuffer* buffer = VulkanGFXDevice::Get()->GetBuffer(vertexBuffer);
+        pushConstant.transform = transform;
+        pushConstant.materialIndex = materialIndex;
         pushConstant.vBuffer = buffer->bufferAddress;
+
         vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, pcSize, &pushConstant);
     }
 
