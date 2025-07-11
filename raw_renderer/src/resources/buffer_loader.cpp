@@ -34,7 +34,7 @@ namespace Raw
         if(m_BufferMap.find(hashedName) != m_BufferMap.end())
         {
             RAW_DEBUG("Duplicate buffer id: %llu, name: %s", hashedName, name);
-            return nullptr;
+            return m_BufferMap[hashedName].get();
         }
         GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
         std::unique_ptr<BufferResource> res = std::make_unique<BufferResource>();

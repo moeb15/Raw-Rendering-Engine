@@ -96,7 +96,7 @@ namespace Raw
     Resource* TextureLoader::CreateFromFile(cstring name, cstring filename)
     {
         u64 hashedName = Utils::HashCString(name);
-        if(m_TextureMap.find(hashedName) != m_TextureMap.end()) return nullptr;
+        if(m_TextureMap.find(hashedName) != m_TextureMap.end()) return m_TextureMap[hashedName].get();
         
         int w, h, numCh;
         u8* imageData = stbi_load(filename, &w, &h, &numCh, 4);
@@ -130,7 +130,7 @@ namespace Raw
     Resource* TextureLoader::CreateFromData(cstring name, const GFX::TextureDesc& desc, void* data)
     {
         u64 hashedName = Utils::HashCString(name);
-        if(m_TextureMap.find(hashedName) != m_TextureMap.end()) return nullptr;
+        if(m_TextureMap.find(hashedName) != m_TextureMap.end()) return m_TextureMap[hashedName].get();
 
         std::unique_ptr<TextureResource> tex = std::make_unique<TextureResource>();
         tex->name = name;
