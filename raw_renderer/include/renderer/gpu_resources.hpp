@@ -8,6 +8,7 @@ namespace Raw::GFX
     constexpr u32 MAX_SHADER_STAGES = 7;
     constexpr u32 MAX_COLOUR_ATTACHMENTS = 8;
     constexpr f32 LOD_CLAMP_NONE = 1000.0f; 
+    constexpr u32 MAX_MATERIALS = 512;
 
     constexpr u32 INVALID_RESOURCE_HANDLE = U32_MAX;
     typedef u32 ResourceHandle;
@@ -184,15 +185,16 @@ namespace Raw::GFX
         CLAMP_TO_BORDER,
     };
 
-    enum class EShaderStage : u8
+    enum EShaderStage : u8
     {
-        VERTEX,
-        FRAGMENT,
-        COMPUTE,
-        MESH,
-        GEOM,
-        TESS_EVAL,
-        TESS_CONTROL,
+        INVALID_SHADER_STAGE                  = 0,
+        VERTEX_STAGE                          = 1 << 0,
+        FRAGMENT_STAGE                        = 1 << 1,
+        COMPUTE_STAGE                         = 1 << 2,
+        MESH_STAGE                            = 1 << 3,
+        GEOM_STAGE                            = 1 << 4,
+        TESS_EVAL_STAGE                       = 1 << 5,
+        TESS_CONTROL_STAGE                    = 1 << 6,
     };
 
     enum class EBlendState : u8
@@ -356,7 +358,7 @@ namespace Raw::GFX
     struct Binding
     {
         EDescriptorType type{ EDescriptorType::UNIFORM_BUFFER };
-        EShaderStage stage{ EShaderStage::VERTEX };
+        EShaderStage stage{ EShaderStage::VERTEX_STAGE };
         u32 count{ 0 };
         u32 bind{ 0 };
     };
@@ -401,7 +403,7 @@ namespace Raw::GFX
 
     struct ShaderDesc
     {
-        EShaderStage stage{ EShaderStage::VERTEX };
+        EShaderStage stage{ EShaderStage::VERTEX_STAGE };
         cstring shaderName{ nullptr };
     };
 
@@ -422,7 +424,7 @@ namespace Raw::GFX
     {
         u32 offset{ 0 };
         u32 size{ 0 };
-        EShaderStage stage{ EShaderStage::VERTEX };
+        u8 stage{ EShaderStage::INVALID_SHADER_STAGE };
     };
 
     struct GraphicsPipelineDesc
@@ -456,12 +458,14 @@ namespace Raw::GFX
         cstring name{ nullptr };
     };
 
+    #pragma pack(push, 1)
     struct IndirectDraw
     {
         u32 indexCount;
         u32 instanceCount;
         u32 firstIndex;
-        u32 vertexOffset;
+        i32 vertexOffset;
         u32 firstInstance;
     };
+    #pragma pack(pop)
 }
