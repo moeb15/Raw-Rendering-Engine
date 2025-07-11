@@ -52,6 +52,7 @@ namespace Raw::GFX
         frameDelQueue.resize(numFramesInFlight);
         bindlessSetUpdates.resize(numFramesInFlight);
         sceneDataUpdates.resize(numFramesInFlight);
+        materialDataUpdates.resize(numFramesInFlight);
     }
 
     void VulkanCommandBufferManager::Shutdown()
@@ -73,6 +74,7 @@ namespace Raw::GFX
             frameDelQueue[i].Flush();
             bindlessSetUpdates[i].Shutdown();
             sceneDataUpdates[i].Shutdown();
+            materialDataUpdates[i].Shutdown();
         }
 
 
@@ -82,6 +84,7 @@ namespace Raw::GFX
         frameDelQueue.clear();
         bindlessSetUpdates.clear();
         sceneDataUpdates.clear();
+        materialDataUpdates.clear();
     }
 
     void VulkanCommandBufferManager::ResetBuffers(u32 frameIndex)

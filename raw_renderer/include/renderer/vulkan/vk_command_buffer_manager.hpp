@@ -35,6 +35,7 @@ namespace Raw::GFX
         std::vector<DeletionQueue> frameDelQueue;
         std::vector<VulkanDescriptorWriter> bindlessSetUpdates;
         std::vector<VulkanDescriptorWriter> sceneDataUpdates;
+        std::vector<VulkanDescriptorWriter> materialDataUpdates;
 
         u32 numPoolsPerFrame{ 1 };
         u32 threadCount{ 1 };
