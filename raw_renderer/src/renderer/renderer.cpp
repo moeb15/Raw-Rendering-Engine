@@ -3,6 +3,7 @@
 #include "renderer/gfxdevice.hpp"
 #include "renderer/command_buffer.hpp"
 #include "resources/buffer_loader.hpp"
+#include "scene/scene.hpp"
 #include "core/job_system.hpp"
 #include "editor/editor.hpp"
 
@@ -36,16 +37,18 @@ namespace Raw::GFX
         m_SceneDataBuffer = sceneDataBuffer->buffer;
 
         device->MapBuffer(m_SceneDataBuffer, &initialData, sizeof(GlobalSceneData));
-        device->UnmapBuffer(m_SceneDataBuffer, true);
+        device->UnmapBuffer(m_SceneDataBuffer, EBufferMapType::SCENE);
     }
 
     void Renderer::Shutdown()
     {
         delete m_DepthPass;
+        delete m_ForwardPass;
     }
 
-    void Renderer::Render(SceneData* scene, Camera& camera, f32 dt)
+    void Renderer::Render(Scene* scene, Camera& camera, f32 dt)
     {
+        static bool update = true;
         elapsedTime += dt;
 
         sceneData.view = camera.GetViewMatrix();
@@ -55,10 +58,12 @@ namespace Raw::GFX
         IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
         
         device->MapBuffer(m_SceneDataBuffer, &sceneData, sizeof(GlobalSceneData));
-        device->UnmapBuffer(m_SceneDataBuffer, true);
-        
+        device->UnmapBuffer(m_SceneDataBuffer, EBufferMapType::SCENE);
+
+        scene->Update(device);
+
         device->BeginOverlay();
-        Editor::Get()->Render(dt, *scene, sceneData);
+        Editor::Get()->Render(dt, *scene->GetSceneData(), sceneData);
         
         device->BeginFrame();
         
@@ -66,9 +71,10 @@ namespace Raw::GFX
         
         cmd->BeginCommandBuffer();
         cmd->Clear(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
+        // cmd->AddMemoryBarrier(scene->GetSceneMaterials(), EPipelineStageFlags::FRAGMENT_SHADER_BIT, EPipelineStageFlags::FRAGMENT_SHADER_BIT);
 
-        m_DepthPass->Execute(device, cmd, scene);
-        m_ForwardPass->Execute(device, cmd, scene);
+        m_DepthPass->Execute(device, cmd, scene->GetSceneData());
+        m_ForwardPass->Execute(device, cmd, scene->GetSceneData());
 
         device->EndFrame();
     }
