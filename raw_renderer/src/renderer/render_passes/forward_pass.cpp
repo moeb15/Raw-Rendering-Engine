@@ -14,13 +14,13 @@ namespace Raw::GFX
     {
         techiqueDesc.sDesc.numStages = 2;
         techiqueDesc.sDesc.shaders[0].shaderName = "pbr_forward";
-        techiqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX;
+        techiqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX_STAGE;
         techiqueDesc.sDesc.shaders[1].shaderName = "pbr_forward";
-        techiqueDesc.sDesc.shaders[1].stage = EShaderStage::FRAGMENT;
+        techiqueDesc.sDesc.shaders[1].stage = EShaderStage::FRAGMENT_STAGE;
         
         techiqueDesc.pushConstant.offset = 0;
-        techiqueDesc.pushConstant.size = 128;
-        techiqueDesc.pushConstant.stage = GFX::EShaderStage::VERTEX;
+        techiqueDesc.pushConstant.size = device->GetMaximumPushConstantSize();
+        techiqueDesc.pushConstant.stage = GFX::EShaderStage::VERTEX_STAGE;
 
         techiqueDesc.dsDesc.depthEnable = true;
         techiqueDesc.dsDesc.stencilEnable = false;
@@ -65,62 +65,26 @@ namespace Raw::GFX
         {
             MeshData mesh = scene->meshes[i];
             glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
-            PBRMaterialData& material = scene->materials[mesh.materialIndex];
+            PBRMaterialData material = scene->materials[mesh.materialIndex];
             if(material.isTransparent) continue;
-        
-            u32 diffuse = errorTexture.id;
-            u32 normal = defaultTexture.id;
-            u32 roughness = defaultTexture.id;
-            u32 occlusion = defaultTexture.id;
-            u32 emissive = defaultEmissive.id;
-
-            if(material.diffuse != -1)      diffuse = scene->images[scene->textures[material.diffuse]];
-            if(material.normal != -1)       normal = scene->images[scene->textures[material.normal]];
-            if(material.roughness != -1)    roughness = scene->images[scene->textures[material.roughness]];
-            if(material.occlusion != -1)    occlusion = scene->images[scene->textures[material.occlusion]];
-            if(material.emissive != -1)     emissive = scene->images[scene->textures[material.emissive]];
-
-            PBRMaterialData renderedMat = material;
-            renderedMat.diffuse = diffuse;
-            renderedMat.roughness = roughness;
-            renderedMat.occlusion = occlusion;
-            renderedMat.normal = normal;
-            renderedMat.emissive = emissive;
-            
-            cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, renderedMat);
+    
+            cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, mesh.materialIndex);
             cmd->BindIndexBuffer(scene->indexBuffer);
             cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
+            //cmd->DrawIndexedIndirect(scene->indirectBuffer, 0, scene->drawCount);
         }
 
         for(u32 i = 0; i < scene->meshes.size(); i++)
         {
             MeshData mesh = scene->meshes[i];
             glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
-            PBRMaterialData& material = scene->materials[mesh.materialIndex];
+            PBRMaterialData material = scene->materials[mesh.materialIndex];
             if(!material.isTransparent) continue;
         
-            u32 diffuse = errorTexture.id;
-            u32 normal = defaultTexture.id;
-            u32 roughness = defaultTexture.id;
-            u32 occlusion = defaultTexture.id;
-            u32 emissive = defaultEmissive.id;
-
-            if(material.diffuse != -1)      diffuse = scene->images[scene->textures[material.diffuse]];
-            if(material.normal != -1)       normal = scene->images[scene->textures[material.normal]];
-            if(material.roughness != -1)    roughness = scene->images[scene->textures[material.roughness]];
-            if(material.occlusion != -1)    occlusion = scene->images[scene->textures[material.occlusion]];
-            if(material.emissive != -1)     emissive = scene->images[scene->textures[material.emissive]];
-
-            PBRMaterialData renderedMat = material;
-            renderedMat.diffuse = diffuse;
-            renderedMat.roughness = roughness;
-            renderedMat.occlusion = occlusion;
-            renderedMat.normal = normal;
-            renderedMat.emissive = emissive;
-            
-            cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, renderedMat);
+            cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, mesh.materialIndex);
             cmd->BindIndexBuffer(scene->indexBuffer);
             cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
+            //cmd->DrawIndexedIndirect(scene->indirectBuffer, 0, scene->drawCount);
         }
 
         cmd->EndRendering();
@@ -140,29 +104,10 @@ namespace Raw::GFX
                 {
                     MeshData mesh = scene->meshes[i];
                     glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
-                    PBRMaterialData& material = scene->materials[mesh.materialIndex];
+                    PBRMaterialData material = scene->materials[mesh.materialIndex];
                     if(material.isTransparent) continue;
                 
-                    u32 diffuse = errorTexture.id;
-                    u32 normal = defaultTexture.id;
-                    u32 roughness = defaultTexture.id;
-                    u32 occlusion = defaultTexture.id;
-                    u32 emissive = defaultEmissive.id;
-
-                    if(material.diffuse != -1)      diffuse = scene->images[scene->textures[material.diffuse]];
-                    if(material.normal != -1)       normal = scene->images[scene->textures[material.normal]];
-                    if(material.roughness != -1)    roughness = scene->images[scene->textures[material.roughness]];
-                    if(material.occlusion != -1)    occlusion = scene->images[scene->textures[material.occlusion]];
-                    if(material.emissive != -1)     emissive = scene->images[scene->textures[material.emissive]];
-
-                    PBRMaterialData renderedMat = material;
-                    renderedMat.diffuse = diffuse;
-                    renderedMat.roughness = roughness;
-                    renderedMat.occlusion = occlusion;
-                    renderedMat.normal = normal;
-                    renderedMat.emissive = emissive;
-                    
-                    cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, renderedMat);
+                    cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, mesh.materialIndex);
                     cmd->BindIndexBuffer(scene->indexBuffer);
                     cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
                 }
@@ -171,29 +116,10 @@ namespace Raw::GFX
                 {
                     MeshData mesh = scene->meshes[i];
                     glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
-                    PBRMaterialData& material = scene->materials[mesh.materialIndex];
+                    PBRMaterialData material = scene->materials[mesh.materialIndex];
                     if(!material.isTransparent) continue;
-                
-                    u32 diffuse = errorTexture.id;
-                    u32 normal = defaultTexture.id;
-                    u32 roughness = defaultTexture.id;
-                    u32 occlusion = defaultTexture.id;
-                    u32 emissive = defaultEmissive.id;
-
-                    if(material.diffuse != -1)      diffuse = scene->images[scene->textures[material.diffuse]];
-                    if(material.normal != -1)       normal = scene->images[scene->textures[material.normal]];
-                    if(material.roughness != -1)    roughness = scene->images[scene->textures[material.roughness]];
-                    if(material.occlusion != -1)    occlusion = scene->images[scene->textures[material.occlusion]];
-                    if(material.emissive != -1)     emissive = scene->images[scene->textures[material.emissive]];
-
-                    PBRMaterialData renderedMat = material;
-                    renderedMat.diffuse = diffuse;
-                    renderedMat.roughness = roughness;
-                    renderedMat.occlusion = occlusion;
-                    renderedMat.normal = normal;
-                    renderedMat.emissive = emissive;
                     
-                    cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, renderedMat);
+                    cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, mesh.materialIndex);
                     cmd->BindIndexBuffer(scene->indexBuffer);
                     cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
                 }

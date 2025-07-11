@@ -9,7 +9,7 @@ namespace Raw::GFX
     {
         techiqueDesc.sDesc.numStages = 1;
         techiqueDesc.sDesc.shaders[0].shaderName = "zpass";
-        techiqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX;
+        techiqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX_STAGE;
 
         techiqueDesc.dsDesc.depthWriteEnable = true;
         techiqueDesc.dsDesc.depthEnable = true;
@@ -17,8 +17,8 @@ namespace Raw::GFX
         techiqueDesc.dsDesc.depthComparison = EComparisonFunc::LESS;
 
         techiqueDesc.pushConstant.offset = 0;
-        techiqueDesc.pushConstant.size = 128;
-        techiqueDesc.pushConstant.stage = EShaderStage::VERTEX;
+        techiqueDesc.pushConstant.size = device->GetMaximumPushConstantSize();
+        techiqueDesc.pushConstant.stage = EShaderStage::VERTEX_STAGE;
 
         techiqueDesc.numImageAttachments = 0;
 
@@ -38,16 +38,22 @@ namespace Raw::GFX
             MeshData mesh = scene->meshes[i];
             glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
         
-            cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform);
-            cmd->BindIndexBuffer(scene->indexBuffer);
-                
+            
             PBRMaterialData& material = scene->materials[mesh.materialIndex];
             if(material.isTransparent) continue;
-
+            
+            cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, mesh.materialIndex);
+            cmd->BindIndexBuffer(scene->indexBuffer);
             cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
+            //cmd->DrawIndexedIndirect(scene->indirectBuffer, 0, scene->drawCount);
         }
 
         cmd->EndRendering();
+        cmd->AddMemoryBarrier(
+            EAccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, 
+            EAccessFlags::DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+            EPipelineStageFlags::LATE_FRAGMENT_TESTS_BIT,
+            EPipelineStageFlags::EARLY_FRAGMENT_TESTS_BIT);
     }
 
     void DepthPass::ExecuteAsync(IGFXDevice* device, SceneData* scene)
@@ -63,17 +69,20 @@ namespace Raw::GFX
                 {
                     MeshData mesh = scene->meshes[i];
                     glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
-                
-                    cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform);
-                    cmd->BindIndexBuffer(scene->indexBuffer);
-                        
-                    PBRMaterialData& material = scene->materials[mesh.materialIndex];
+                    PBRMaterialData material = scene->materials[mesh.materialIndex];
                     if(material.isTransparent) continue;
-
+                
+                    cmd->BindVertexBuffer(scene->vertexBuffer, meshTransform, mesh.materialIndex);
+                    cmd->BindIndexBuffer(scene->indexBuffer);
                     cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
                 }
 
                 cmd->EndRendering();
+                cmd->AddMemoryBarrier(
+                    EAccessFlags::DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, 
+                    EAccessFlags::DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                    EPipelineStageFlags::LATE_FRAGMENT_TESTS_BIT,
+                    EPipelineStageFlags::EARLY_FRAGMENT_TESTS_BIT);
 
                 device->SubmitCommandBuffer(cmd);
             }
