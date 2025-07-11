@@ -12,6 +12,8 @@
 #include "resources/buffer_loader.hpp"
 #include "scene/scene.hpp"
 #include "renderer/renderer.hpp"
+#include "core/keycodes.hpp"
+#include "events/core_events.hpp"
 
 namespace Raw
 {
@@ -70,13 +72,14 @@ namespace Raw
         ResourceManager::Get()->SetLoader(TextureResource::k_ResourceType, TextureLoader::Instance());
         ResourceManager::Get()->SetLoader(BufferResource::k_ResourceType, BufferLoader::Instance());
 
-        std::string gltfScene = "C:/Users/Mujta/VSCode Projects/raw/assets/GLTF/Sponza/glTF/Sponza.gltf";
-
-        testScene = new Scene();
-        testScene->Init(gltfScene);
-
+        
         activeRenderPath = new GFX::Renderer();
         activeRenderPath->Init();
+        
+        GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
+        std::string gltfScene = "C:/Users/Mujta/VSCode Projects/renderer/assets/GLTF/Sponza/glTF/Sponza.gltf";
+        testScene = new Scene();
+        testScene->Init(gltfScene, device);
 
         glm::vec3 pos(0.0f, 0.0f, 1.f);
         glm::vec3 target(0.0f,0.0f, 0.f);
@@ -96,10 +99,12 @@ namespace Raw
 
         while(ServiceLocator::Get()->GetServiceByType<MultiPlatformWindow>()->Update())
         {
+            if(Input::Get()->IsKeyPressed(RAW_KEY_ESCAPE)) EventManager::Get()->TriggerEvent(std::make_unique<ApplicationExitEvent>());
+           
             if(!m_Suspended)
             {
                 m_Camera->Update(deltaTime);
-                activeRenderPath->Render(testScene->GetSceneData(), *m_Camera, deltaTime);
+                activeRenderPath->Render(testScene, *m_Camera, deltaTime);
 
                 endTime = Timer::Get()->Now();
                 deltaTime = Timer::Get()->DeltaSeconds(curTime, endTime);

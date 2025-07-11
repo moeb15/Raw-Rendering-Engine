@@ -409,13 +409,13 @@ namespace Raw::GFX::vkUtils
 	{
 		switch(stage)
 		{
-			case EShaderStage::VERTEX:									return VK_SHADER_STAGE_VERTEX_BIT;
-        	case EShaderStage::FRAGMENT:								return VK_SHADER_STAGE_FRAGMENT_BIT;
-        	case EShaderStage::COMPUTE:									return VK_SHADER_STAGE_COMPUTE_BIT;
-        	case EShaderStage::MESH:									return VK_SHADER_STAGE_MESH_BIT_EXT;
-        	case EShaderStage::GEOM:									return VK_SHADER_STAGE_GEOMETRY_BIT;
-        	case EShaderStage::TESS_EVAL:								return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        	case EShaderStage::TESS_CONTROL:							return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+			case EShaderStage::VERTEX_STAGE:							return VK_SHADER_STAGE_VERTEX_BIT;
+        	case EShaderStage::FRAGMENT_STAGE:							return VK_SHADER_STAGE_FRAGMENT_BIT;
+        	case EShaderStage::COMPUTE_STAGE:							return VK_SHADER_STAGE_COMPUTE_BIT;
+        	case EShaderStage::MESH_STAGE:								return VK_SHADER_STAGE_MESH_BIT_EXT;
+        	case EShaderStage::GEOM_STAGE:								return VK_SHADER_STAGE_GEOMETRY_BIT;
+        	case EShaderStage::TESS_EVAL_STAGE:							return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+        	case EShaderStage::TESS_CONTROL_STAGE:						return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 			default:													return VK_SHADER_STAGE_ALL;
 		}
 	}
