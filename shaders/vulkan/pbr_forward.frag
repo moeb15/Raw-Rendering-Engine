@@ -20,8 +20,9 @@ layout (location = 0) in vec2 inUV;
 layout (location = 1) in vec4 inWorldPos;
 layout (location = 2) in vec3 inViewPos;
 layout (location = 3) in vec3 inNormal;
-layout (location = 4) in vec4 inLightPos;
-layout (location = 5) in flat uint inMaterialIndex;
+layout (location = 4) in vec4 inTangent;
+layout (location = 5) in vec4 inLightPos;
+layout (location = 6) in flat uint inMaterialIndex;
 
 
 //output write
@@ -89,10 +90,15 @@ void main()
 		}
 		baseColor.rgba *= material.baseColorFactor.rgba;
 
-		float gamma = 2.2;
-		baseColor.rgb = pow(baseColor.rgb, vec3(gamma));
+		// float gamma = 2.2;
+		// baseColor.rgb = pow(baseColor.rgb, vec3(gamma));
 
-		vec3 normal = normalize(inNormal); //normalize(texture(globalTextures[nonuniformEXT(inTextures.y)], inUV).rgb * 2.0 - 1.0);
+		vec3 vNorm = normalize(inNormal);
+		vec3 vTan = normalize(inTangent.xyz);
+		vec3 bTan = cross(inNormal, inTangent.xyz) * inTangent.w;
+		mat3 TBN = mat3(vTan, bTan, vNorm);
+
+		vec3 normal = TBN * normalize(texture(globalTextures[nonuniformEXT(material.normal)], inUV).rgb * 2.0 - 1.0);
 		vec4 rm = texture(globalTextures[nonuniformEXT(material.roughness)], inUV);
 		vec4 occ = texture(globalTextures[nonuniformEXT(material.occlusion)], inUV);
 		vec4 emissive = texture(globalTextures[nonuniformEXT(material.emissive)], inUV);
