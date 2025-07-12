@@ -30,6 +30,8 @@ namespace Raw
         virtual Resource* Get(u64 hashedName) override;
         virtual void Unload(cstring name) override;
         virtual void Unload(u64 hashedName) override;
+        virtual void Remove(cstring name) override;
+        virtual void Remove(u64 hashedName) override;
         virtual Resource* CreateFromFile(cstring name, cstring filename) override;
         Resource* CreateFromData(cstring name, const GFX::TextureDesc& desc, void* data);
         Resource* CreateFromHandle(cstring name, const GFX::TextureHandle& texture);

@@ -68,7 +68,7 @@ namespace Raw
         if(m_TextureMap.find(hashedName) != m_TextureMap.end())
         {
             m_TextureMap[hashedName]->RemoveRef();
-            if(m_TextureMap[hashedName]->refs == 0)
+            if(m_TextureMap[hashedName]->refs <= 0)
             {
                 GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
                 TextureResource* res = m_TextureMap[hashedName].get();
@@ -77,7 +77,10 @@ namespace Raw
                 m_TextureMap.erase(hashedName);
             }
         }
-        RAW_DEBUG("TextureLoader could not unload texture '%s'", name);
+        else
+        {
+            RAW_DEBUG("TextureLoader could not unload texture '%s'", name);
+        }
     }
 
     void TextureLoader::Unload(u64 hashedName)
@@ -85,7 +88,7 @@ namespace Raw
         if(m_TextureMap.find(hashedName) != m_TextureMap.end())
         {
             m_TextureMap[hashedName]->RemoveRef();
-            if(m_TextureMap[hashedName]->refs == 0)
+            if(m_TextureMap[hashedName]->refs <= 0)
             {
                 GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
                 TextureResource* res = m_TextureMap[hashedName].get();
@@ -94,7 +97,43 @@ namespace Raw
                 m_TextureMap.erase(hashedName);
             }
         }
-        RAW_DEBUG("TextureLoader could not unload texture ID '%llu'", hashedName);
+        else
+        {
+            RAW_DEBUG("TextureLoader could not unload texture ID '%llu'", hashedName);
+        }
+    }
+
+    void TextureLoader::Remove(cstring name)
+    {
+        u64 hashedName = Utils::HashCString(name);
+        if(m_TextureMap.find(hashedName) != m_TextureMap.end())
+        {
+            GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
+            TextureResource* res = m_TextureMap[hashedName].get();
+            device->DestroyTexture(res->handle);
+
+            m_TextureMap.erase(hashedName);
+        }
+        else
+        {
+            RAW_DEBUG("TextureLoader could not remove texture '%s'", name);
+        }
+    }
+
+    void TextureLoader::Remove(u64 hashedName)
+    {
+        if(m_TextureMap.find(hashedName) != m_TextureMap.end())
+        {
+            GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
+            TextureResource* res = m_TextureMap[hashedName].get();
+            device->DestroyTexture(res->handle);
+
+            m_TextureMap.erase(hashedName);
+        }
+        else
+        {
+            RAW_DEBUG("TextureLoader could not remove texture ID '%llu'", hashedName);
+        }
     }
 
     Resource* TextureLoader::CreateFromFile(cstring name, cstring filename)
@@ -159,7 +198,7 @@ namespace Raw
         tex->name = name;
         tex->textureId = hashedName;
         tex->handle = texture;
-        tex->AddRef();
+        // tex->AddRef();
 
         m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
         return m_TextureMap[hashedName].get();
