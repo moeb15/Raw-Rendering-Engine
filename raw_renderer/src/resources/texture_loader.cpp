@@ -147,4 +147,21 @@ namespace Raw
         m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
         return m_TextureMap[hashedName].get();
     }
+
+    Resource* TextureLoader::CreateFromHandle(cstring name, const GFX::TextureHandle& texture)
+    {
+        RAW_ASSERT_MSG(texture.IsValid(), "Cannot create texture resource with invalid texture handle!");
+        
+        u64 hashedName = Utils::HashCString(name);
+        if(m_TextureMap.find(hashedName) != m_TextureMap.end()) return m_TextureMap[hashedName].get();
+
+        std::unique_ptr<TextureResource> tex = std::make_unique<TextureResource>();
+        tex->name = name;
+        tex->textureId = hashedName;
+        tex->handle = texture;
+        tex->AddRef();
+
+        m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
+        return m_TextureMap[hashedName].get();
+    }
 }

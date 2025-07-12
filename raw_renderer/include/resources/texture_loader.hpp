@@ -32,7 +32,8 @@ namespace Raw
         virtual void Unload(u64 hashedName) override;
         virtual Resource* CreateFromFile(cstring name, cstring filename) override;
         Resource* CreateFromData(cstring name, const GFX::TextureDesc& desc, void* data);
-
+        Resource* CreateFromHandle(cstring name, const GFX::TextureHandle& texture);
+        
     private:
         std::unordered_map<u64, std::unique_ptr<TextureResource>> m_TextureMap;
 
