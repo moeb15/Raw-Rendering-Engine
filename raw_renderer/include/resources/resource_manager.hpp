@@ -3,9 +3,12 @@
 #include "core/defines.hpp"
 #include "core/asserts.hpp"
 #include <unordered_map>
+#include <string>
 
 namespace Raw
 {
+    static const std::string RAW_RESOURCES_DIR{ ASSETS_DIR };
+
     struct Resource
     {
         u64 refs{ 0 };

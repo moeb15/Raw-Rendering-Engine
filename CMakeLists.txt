@@ -73,7 +73,9 @@ if(WIN32)
     )
 endif()
 
-set(VULKAN_SHADERS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vulkan)
+target_compile_definitions(${PROJECT_NAME} PRIVATE ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
+
+set(VULKAN_SHADERS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vulkan)
 set(VULKAN_SHADERS_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders-bin/vulkan)
 target_compile_definitions(${PROJECT_NAME} PRIVATE VULKAN_SHADERS_DIR="${VULKAN_SHADERS_BIN_DIR}")
 if(WIN32)
@@ -85,9 +87,9 @@ endif()
 
 # Vulkan Shader Compilation
 file (GLOB VULKAN_SHADERS 
-    "${VULKAN_SHADERS_DIR}/*.frag" 
-    "${VULKAN_SHADERS_DIR}/*.vert" 
-    "${VULKAN_SHADERS_DIR}/*.comp")
+    "${VULKAN_SHADERS_SRC_DIR}/*.frag" 
+    "${VULKAN_SHADERS_SRC_DIR}/*.vert" 
+    "${VULKAN_SHADERS_SRC_DIR}/*.comp")
 
 if(WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD

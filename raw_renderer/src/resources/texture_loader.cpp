@@ -16,9 +16,13 @@ namespace Raw
 
     void TextureLoader::Init()
     {
-        TextureLoader::Instance()->CreateFromFile(ERROR_TEXTURE, "C:/Users/Mujta/VSCode Projects/raw/assets/Error.png");
-        TextureLoader::Instance()->CreateFromFile(DEFAULT_TEXTURE, "C:/Users/Mujta/VSCode Projects/raw/assets/Default.png");
-        TextureLoader::Instance()->CreateFromFile(DEFAULT_EMISSIVE, "C:/Users/Mujta/VSCode Projects/raw/assets/DefaultEmissive.png");
+        std::string errDir = RAW_RESOURCES_DIR + "/Error.png";
+        std::string defaultTexDir = RAW_RESOURCES_DIR + "/Default.png";
+        std::string defaultEmissiveDir = RAW_RESOURCES_DIR + "/DefaultEmissive.png";
+
+        TextureLoader::Instance()->CreateFromFile(ERROR_TEXTURE, errDir.c_str());
+        TextureLoader::Instance()->CreateFromFile(DEFAULT_TEXTURE, defaultTexDir.c_str());
+        TextureLoader::Instance()->CreateFromFile(DEFAULT_EMISSIVE, defaultEmissiveDir.c_str());
     }   
 
     void TextureLoader::Shutdown()
