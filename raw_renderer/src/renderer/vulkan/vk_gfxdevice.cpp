@@ -1701,7 +1701,8 @@ namespace Raw::GFX
         {
             pc.offset = desc.pushConstant.offset;
             pc.size = desc.pushConstant.size;
-            pc.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+            // temporary
+            pc.stageFlags = desc.pushConstant.stage & EShaderStage::VERTEX_STAGE ? VK_SHADER_STAGE_VERTEX_BIT : VK_SHADER_STAGE_FRAGMENT_BIT;
 
             pipelineLayoutInfo.pPushConstantRanges = &pc;
             pipelineLayoutInfo.pushConstantRangeCount = 1;
@@ -2053,6 +2054,13 @@ namespace Raw::GFX
         handle.id = INVALID_RESOURCE_HANDLE;
     }
 
+    void VulkanGFXDevice::UpdateGraphicsPipelineImageAttachments(const GraphicsPipelineHandle& handle, u32 numImageAttachments, TextureHandle* attachments)
+    {
+        VulkanPipeline* pipeline = GetGraphicsPipeline(handle);
+        pipeline->numImageAttachments = numImageAttachments;
+        pipeline->imageAttachements = attachments;
+    }
+
     VulkanTexture* VulkanGFXDevice::GetTexture(const TextureHandle& handle)
     {
         return resCache.textures.GetResource(handle.id);
@@ -2099,6 +2107,7 @@ namespace Raw::GFX
 
     std::pair<u32, u32> VulkanGFXDevice::GetBackBufferSize()
     {
+        VulkanTexture* dImage = GetTexture(drawImage);
         return std::pair<u32, u32>(drawImageExtent.width, drawImageExtent.height);
     }
 

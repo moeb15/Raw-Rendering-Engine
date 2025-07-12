@@ -74,6 +74,8 @@ namespace Raw::GFX
         virtual void DestroyComputePipelineInstant(ComputePipelineHandle& handle) = 0;
         virtual void DestroyGraphicsPipelineInstant(GraphicsPipelineHandle& handle) = 0;
 
+        virtual void UpdateGraphicsPipelineImageAttachments(const GraphicsPipelineHandle& handle, u32 numImageAttachments, TextureHandle* attachments) = 0;
+
         static constexpr cstring k_ServiceName = "raw_gfxdevice_service";
     };
 }
