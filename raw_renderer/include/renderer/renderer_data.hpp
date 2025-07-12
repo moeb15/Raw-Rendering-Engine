@@ -54,6 +54,17 @@ namespace Raw::GFX
         glm::vec3 padding;
     };
 
+    struct FullScreenData
+    {
+        i32 diffuse{ -1 };
+        i32 roughness{ -1 };
+        i32 normal{ -1 };
+        i32 occlusion{ -1 };
+        i32 emissive{ -1 };
+        i32 viewspace{ -1 };
+        i32 transparent{ -1 };
+    };
+
     struct MeshData
     {
         u32 indexCount{ 0 };
