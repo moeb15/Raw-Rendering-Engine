@@ -31,6 +31,7 @@ namespace Raw::GFX
         virtual void DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount) = 0;
         virtual void BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform = glm::mat4(1.f), u32 materialIndex = U32_MAX) = 0;
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) = 0;
+        virtual void BindFullScreenData(const FullScreenData& data) = 0;
         
         ECommandBufferState GetState() const { return m_State->load(); }
         EQueueType GetQueueType() const { return m_QueueType; }

@@ -33,7 +33,8 @@ namespace Raw::GFX
         virtual void DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount) override;
         virtual void BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform = glm::mat4(1.f), u32 materialIndex = U32_MAX) override;
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) override;
-
+        virtual void BindFullScreenData(const FullScreenData& data) override;
+        
         VkCommandBuffer vulkanCmdBuffer{ VK_NULL_HANDLE };
         VulkanPipeline* activeGraphicsPipeline{ nullptr };
         VkRenderingInfo curRenderingInfo{};

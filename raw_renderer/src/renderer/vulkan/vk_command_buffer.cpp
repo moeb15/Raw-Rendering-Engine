@@ -311,6 +311,32 @@ namespace Raw::GFX
         vkCmdBindIndexBuffer(vulkanCmdBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
+    void VulkanCommandBuffer::BindFullScreenData(const FullScreenData& data)
+    {
+        struct
+        {
+            u32 diffuse;
+            u32 roughness;
+            u32 normal;
+            u32 occlusion;
+            u32 emissive;
+            u32 viewspace;
+            u32 transparent;
+        } pushConstant;
+
+        u32 pcSize = sizeof(pushConstant);
+
+        pushConstant.diffuse = data.diffuse;
+        pushConstant.roughness = data.roughness;
+        pushConstant.normal = data.normal;
+        pushConstant.occlusion = data.occlusion;
+        pushConstant.emissive = data.emissive;
+        pushConstant.viewspace = data.viewspace;
+        pushConstant.transparent = data.transparent;
+
+        vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, pcSize, &pushConstant);
+    }
+
     void VulkanCommandBuffer::DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount)
     {
         VulkanBuffer* iBuffer = VulkanGFXDevice::Get()->GetBuffer(indirectBuffer);
