@@ -14,6 +14,9 @@ namespace Raw::GFX
 {
     class DepthPass;
     class ForwardPass;
+    class GeometryPass;
+    class TransparencyPass;
+    class FullScreenPass;
 
     class Renderer
     {
@@ -25,6 +28,9 @@ namespace Raw::GFX
     private:
         DepthPass* m_DepthPass;
         ForwardPass* m_ForwardPass;
+        GeometryPass* m_GeometryPass;
+        TransparencyPass* m_TransparencyPass;
+        FullScreenPass* m_FullScreenPass;
 
         BufferHandle m_SceneDataBuffer;
     };

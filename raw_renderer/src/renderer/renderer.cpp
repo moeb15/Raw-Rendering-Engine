@@ -9,6 +9,9 @@
 
 #include "renderer/render_passes/depth_pass.hpp"
 #include "renderer/render_passes/forward_pass.hpp"
+#include "renderer/render_passes/geometry_pass.hpp"
+#include "renderer/render_passes/transparency_pass.hpp"
+#include "renderer/render_passes/fullscreen_pass.hpp"
 
 namespace Raw::GFX
 {
@@ -19,12 +22,16 @@ namespace Raw::GFX
     {
         IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
 
-        m_DepthPass = new DepthPass();
-        m_DepthPass->Init(device);
-
-        m_ForwardPass = new ForwardPass();
-        m_ForwardPass->Init(device);
+        m_GeometryPass = new GeometryPass();
+        m_GeometryPass->Init(device);
         
+        m_TransparencyPass = new TransparencyPass();
+        m_TransparencyPass->Init(device);
+
+        m_FullScreenPass = new FullScreenPass();
+        m_FullScreenPass->Init(device);
+        m_FullScreenPass->UpdateFullScreenData();
+
         BufferDesc sceneDataDesc;
         sceneDataDesc.bufferSize = sizeof(GlobalSceneData);
         sceneDataDesc.memoryType = EMemoryType::HOST_VISIBLE;
@@ -42,13 +49,13 @@ namespace Raw::GFX
 
     void Renderer::Shutdown()
     {
-        delete m_DepthPass;
-        delete m_ForwardPass;
+        delete m_GeometryPass;
+        delete m_TransparencyPass;
+        delete m_FullScreenPass;
     }
 
     void Renderer::Render(Scene* scene, Camera& camera, f32 dt)
     {
-        static bool update = true;
         elapsedTime += dt;
 
         sceneData.view = camera.GetViewMatrix();
@@ -61,6 +68,7 @@ namespace Raw::GFX
         device->UnmapBuffer(m_SceneDataBuffer, EBufferMapType::SCENE);
 
         scene->Update(device);
+        m_FullScreenPass->UpdateFullScreenData();
 
         device->BeginOverlay();
         Editor::Get()->Render(dt, *scene->GetSceneData(), sceneData);
@@ -71,10 +79,12 @@ namespace Raw::GFX
         
         cmd->BeginCommandBuffer();
         cmd->Clear(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
-        // cmd->AddMemoryBarrier(scene->GetSceneMaterials(), EPipelineStageFlags::FRAGMENT_SHADER_BIT, EPipelineStageFlags::FRAGMENT_SHADER_BIT);
-
-        m_DepthPass->Execute(device, cmd, scene->GetSceneData());
-        m_ForwardPass->Execute(device, cmd, scene->GetSceneData());
+       
+        m_GeometryPass->ExecuteAsync(device, scene->GetSceneData());
+        m_TransparencyPass->ExecuteAsync(device, scene->GetSceneData());
+        JobSystem::Wait();
+        
+        m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
 
         device->EndFrame();
     }
