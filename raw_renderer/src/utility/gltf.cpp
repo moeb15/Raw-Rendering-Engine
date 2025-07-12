@@ -80,6 +80,7 @@ namespace Raw::Utils
                         const f32* positionBuffer = nullptr;
                         const f32* normalBuffer = nullptr;
                         const f32* texCoordBuffer = nullptr;
+                        const f32* tangentsBuffer = nullptr;
                         u64 vertexCount = 0;
 
                         if(gltfPrimitive.attributes.find("POSITION") != gltfPrimitive.attributes.end())
@@ -101,7 +102,14 @@ namespace Raw::Utils
                         {
                             const tinygltf::Accessor& accessor = input.accessors[gltfPrimitive.attributes.find("TEXCOORD_0")->second];
                             const tinygltf::BufferView& view = input.bufferViews[accessor.bufferView];
-                            texCoordBuffer = reinterpret_cast<const float*>(&(input.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
+                            texCoordBuffer = reinterpret_cast<const f32*>(&(input.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
+                        }
+                        
+                        if(gltfPrimitive.attributes.find("TANGENT") != gltfPrimitive.attributes.end())
+                        {
+                            const tinygltf::Accessor& accessor = input.accessors[gltfPrimitive.attributes.find("TANGENT")->second];
+                            const tinygltf::BufferView& view = input.bufferViews[accessor.bufferView];
+                            tangentsBuffer = reinterpret_cast<const f32*>(&(input.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
                         }
 
                         for(u64 v = 0; v < vertexCount; v++)
@@ -112,6 +120,7 @@ namespace Raw::Utils
                             glm::vec2 uv = texCoordBuffer ? glm::make_vec2(&texCoordBuffer[v * 2]) : glm::vec2(0.0f);
                             vert.texCoordU = uv.x;
                             vert.texCoordV = uv.y;
+                            vert.tangent = tangentsBuffer ? glm::make_vec4(&tangentsBuffer[v * 4]) : glm::vec4(0.0f);
 
                             vertices.push_back(vert);
                         }
@@ -328,7 +337,7 @@ namespace Raw::Utils
                 GFX::BufferDesc indirectDesc;
                 indirectDesc.bufferSize = indirectDraws.size() * sizeof(GFX::IndirectDraw);
                 indirectDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
-                indirectDesc.type = GFX::EBufferType::INDIRECT | GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST | GFX::EBufferType::SHADER_DEVICE_ADDRESS;
+                indirectDesc.type = GFX::EBufferType::INDIRECT | GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST;
 
                 std::string vBufferName = filepath + "_vertex";
                 std::string iBufferName = filepath + "_index";
