@@ -31,6 +31,7 @@ namespace Raw::GFX
         f32 texCoordU;
         glm::vec3 normal;
         f32 texCoordV;
+        glm::vec4 tangent;
     };
 
     struct GPUTechnique

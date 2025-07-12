@@ -30,4 +30,5 @@ struct Vertex{
 	float u;
 	vec3 normal;
 	float v;
+	vec4 tangent;
 };
