@@ -2,6 +2,7 @@
 #include "core/servicelocator.hpp"
 #include "resources/buffer_loader.hpp"
 #include "resources/texture_loader.hpp"
+#include "events/event_manager.hpp"
 #include "core/job_system.hpp"
 
 namespace Raw::GFX
@@ -13,6 +14,9 @@ namespace Raw::GFX
 
     void GeometryPass::Init(IGFXDevice* device)
     {
+        m_ResizeHandler = BIND_EVENT_FN(GeometryPass::OnWindowResize);
+        EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_ResizeHandler, WindowResizeEvent), WindowResizeEvent::GetStaticEventType());
+
         std::pair<u32, u32> windowSize = device->GetBackBufferSize();
         diffuseDesc.depth = 1;
         diffuseDesc.width = windowSize.first;
@@ -104,7 +108,6 @@ namespace Raw::GFX
         geometryPassImages[3] = emissiveMap;
         geometryPassImages[4] = viewspacePosition;
         techiqueDesc.imageAttachments = geometryPassImages;
-        techiqueDesc.depthAttachment = &device->GetDepthBufferHandle();
         techiqueDesc.name = "Geometry Pass";
 
         technique.gfxPipeline = device->CreateGraphicsPipeline(techiqueDesc);
@@ -115,11 +118,16 @@ namespace Raw::GFX
         defaultTexture = tex->handle;
         tex = (TextureResource*)TextureLoader::Instance()->Get(DEFAULT_EMISSIVE);
         defaultEmissive = tex->handle;
+
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_DIFFUSE, diffuse);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_NORMAL, normals);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_RM_OCC, roughMetalOccMap);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_EMISSIVE, emissiveMap);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_VIEWSPACE_POS, viewspacePosition);
     }
 
     void GeometryPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
     {
-        for(u32 i = 0; i < ArraySize(geometryPassImages); i++) cmd->TransitionImage(geometryPassImages[i], ETextureLayout::COLOR_ATTACHMENT_OPTIMAL);
         cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
 
         cmd->BeginRendering(technique.gfxPipeline, true, true, true);
@@ -138,9 +146,6 @@ namespace Raw::GFX
         }
 
         cmd->EndRendering();
-
-        for(u32 i = 0; i < ArraySize(geometryPassImages); i++) cmd->TransitionImage(geometryPassImages[i], ETextureLayout::SHADER_READ_ONLY_OPTIMAL);
-        cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     }
 
     
@@ -151,9 +156,7 @@ namespace Raw::GFX
                 ICommandBuffer* cmd = device->GetCommandBuffer();
                 cmd->BeginCommandBuffer();
 
-                for(u32 i = 0; i < ArraySize(geometryPassImages); i++) cmd->TransitionImage(geometryPassImages[i], ETextureLayout::COLOR_ATTACHMENT_OPTIMAL);
-
-                cmd->BeginRendering(technique.gfxPipeline, true, true, false);
+                cmd->BeginRendering(technique.gfxPipeline, true, true, true);
                 cmd->BindPipeline(technique.gfxPipeline);
                 for(u32 i = 0; i < scene->meshes.size(); i++)
                 {
@@ -168,10 +171,56 @@ namespace Raw::GFX
                 }
                 cmd->EndRendering();
                 
-                for(u32 i = 0; i < ArraySize(geometryPassImages); i++) cmd->TransitionImage(geometryPassImages[i], ETextureLayout::SHADER_READ_ONLY_OPTIMAL);
-
                 device->SubmitCommandBuffer(cmd);
             }
         );
-    }  
+    }
+    
+    bool GeometryPass::OnWindowResize(const WindowResizeEvent& e)
+    {
+        IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
+        TextureLoader::Instance()->Remove(GBUFFER_DIFFUSE);
+        TextureLoader::Instance()->Remove(GBUFFER_NORMAL);
+        TextureLoader::Instance()->Remove(GBUFFER_RM_OCC);
+        TextureLoader::Instance()->Remove(GBUFFER_EMISSIVE);
+        TextureLoader::Instance()->Remove(GBUFFER_VIEWSPACE_POS);
+
+        std::pair<u32, u32> windowSize = device->GetBackBufferSize();
+        diffuseDesc.width = windowSize.first;
+        diffuseDesc.height = windowSize.second;
+
+        normalDesc.width = windowSize.first;
+        normalDesc.height = windowSize.second;
+
+        roughMetalOccDesc.width = windowSize.first;
+        roughMetalOccDesc.height = windowSize.second;
+
+        emissiveDesc.width = windowSize.first;
+        emissiveDesc.height = windowSize.second;
+
+        viewspacePositionDesc.width = windowSize.first;
+        viewspacePositionDesc.height = windowSize.second;
+
+        diffuse = device->CreateTexture(diffuseDesc);
+        normals = device->CreateTexture(normalDesc);
+        roughMetalOccMap = device->CreateTexture(roughMetalOccDesc);
+        emissiveMap = device->CreateTexture(emissiveDesc);
+        viewspacePosition = device->CreateTexture(viewspacePositionDesc);
+
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_DIFFUSE, diffuse);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_NORMAL, normals);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_RM_OCC, roughMetalOccMap);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_EMISSIVE, emissiveMap);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_VIEWSPACE_POS, viewspacePosition);
+
+        geometryPassImages[0] = diffuse;
+        geometryPassImages[1] = normals;
+        geometryPassImages[2] = roughMetalOccMap;
+        geometryPassImages[3] = emissiveMap;
+        geometryPassImages[4] = viewspacePosition;
+
+        device->UpdateGraphicsPipelineImageAttachments(technique.gfxPipeline, ArraySize(geometryPassImages), geometryPassImages);
+
+        return false;
+    }
 }

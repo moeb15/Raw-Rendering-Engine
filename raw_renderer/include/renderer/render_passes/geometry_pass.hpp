@@ -1,9 +1,17 @@
 #pragma once
 
 #include "renderer/render_passes/render_pass.hpp"
+#include "events/core_events.hpp"
+#include "events/event_handler.hpp"
 
 namespace Raw::GFX
 {
+    #define GBUFFER_DIFFUSE              "diffuse"
+    #define GBUFFER_NORMAL               "normal"
+    #define GBUFFER_RM_OCC               "roughMetalOcc"
+    #define GBUFFER_EMISSIVE             "emissive"
+    #define GBUFFER_VIEWSPACE_POS        "viewspacePosition"
+
     class GeometryPass : public IRenderPass
     {
     public:
@@ -28,5 +36,10 @@ namespace Raw::GFX
         TextureDesc roughMetalOccDesc;
         TextureDesc emissiveDesc;
         TextureDesc viewspacePositionDesc;
+
+    private:
+        bool OnWindowResize(const WindowResizeEvent& e);
+        EventHandler<WindowResizeEvent> m_ResizeHandler;
+
     };
 }
