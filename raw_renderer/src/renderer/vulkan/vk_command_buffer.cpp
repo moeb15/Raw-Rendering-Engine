@@ -318,7 +318,6 @@ namespace Raw::GFX
             u32 diffuse;
             u32 roughness;
             u32 normal;
-            u32 occlusion;
             u32 emissive;
             u32 viewspace;
             u32 transparent;
@@ -329,7 +328,6 @@ namespace Raw::GFX
         pushConstant.diffuse = data.diffuse;
         pushConstant.roughness = data.roughness;
         pushConstant.normal = data.normal;
-        pushConstant.occlusion = data.occlusion;
         pushConstant.emissive = data.emissive;
         pushConstant.viewspace = data.viewspace;
         pushConstant.transparent = data.transparent;
