@@ -18,14 +18,13 @@ layout(push_constant) uniform constants{
     uint diffuse;
     uint roughness;
     uint normal;
-    uint occlusion;
     uint emissive;
     uint viewspace;
     uint transparent;
 } PushConstants;
 
 #define PI 3.1415926538
-#define AMBIENT 0.1
+#define AMBIENT 0.5
 #define BIAS 0.0005
 
 float heaviside( float v ) {
@@ -33,66 +32,88 @@ float heaviside( float v ) {
     else return 0.0;
 }
 
+float distGGX(vec3 N, vec3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+
+    return (a2 * heaviside(NdotH)) / max(denom, 0.0001);
+}
+
+float geomSchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    float denom = NdotV * (1.0 - k) + k;
+    
+    return NdotV / denom;
+}
+
+float geomSmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx1 = geomSchlickGGX(NdotV, roughness);
+    float ggx2 = geomSchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) *pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 void main() 
 {
     vec4 baseColor = texture(globalTextures[nonuniformEXT(PushConstants.diffuse)], inUV);
-    outFragColor = baseColor;
-/*
-    vec3 normal = normalize(texture(globalTextures[nonuniformEXT(PushConstants.normal)], inUV).rgb);
-	vec4 rm = texture(globalTextures[nonuniformEXT(PushConstants.roughness)], inUV);
-	vec4 occ = texture(globalTextures[nonuniformEXT(PushConstants.occlusion)], inUV);
+    vec3 normal = texture(globalTextures[nonuniformEXT(PushConstants.normal)], inUV).rgb;
+	vec4 rmOcc = texture(globalTextures[nonuniformEXT(PushConstants.roughness)], inUV);
 	vec4 emissive = texture(globalTextures[nonuniformEXT(PushConstants.emissive)], inUV);
+    vec4 viewPos = texture(globalTextures[nonuniformEXT(PushConstants.viewspace)], inUV);
+    vec4 transparency = texture(globalTextures[nonuniformEXT(PushConstants.transparent)], inUV);
 
     mat3 rot = mat3(GlobalSceneData.view);
     vec3 translation = vec3(GlobalSceneData.view[3]);
     vec3 eyePos = -translation * rot;
 
-    vec3 V = normalize(eyePos.xyz);
+    vec3 V = normalize(vec3(1.0));//normalize(-eyePos.xyz);
     vec3 L = normalize(-GlobalSceneData.lightDir.xyz);
     vec3 N = normal;
     vec3 H = normalize(L + V);
 
-	float metalness = rm.g;
-	float roughness = rm.b;
+	float roughness = rmOcc.r;
+    float metalness = rmOcc.g;
+	float occlusion = rmOcc.b;
 	float alpha = pow(roughness, 2.0);
-	float occlusion = occ.r;
 
-	float NdotH = clamp(dot(N, H), 0, 1);
-	float alpahSqr = alpha * alpha;
-	float dDenom = (NdotH * NdotH) * (alpahSqr - 1.0) + 1.0;
-	float distribution = (alpahSqr) / (PI * dDenom * dDenom);
+    vec3 F0 = mix(vec3(0.04), baseColor.rgb, metalness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-	float NdotL = clamp(dot(N, L), 0, 1);
-	float NdotV = clamp(dot(N, V), 0, 1);
-	float HdotL = clamp(dot(H, L), 0, 1);
-	float HdotV = clamp(dot(H, V), 0, 1);
+    float NDF = distGGX(N, H, metalness);
+    float G = geomSmith(N, V, L, metalness);
+    
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
 
-	float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
-	float gl = NdotL / (NdotL * (1.0 - k ) + k);
-	float gv = NdotV / (NdotV * (1.0 - k ) + k);
+    vec3 diffuse = baseColor.rgb / PI;
 
-    float visibility = gl * gv;
-	vec3 f0 = mix(vec3(0.04), baseColor.rgb, metalness);
-	vec3 fr = f0 + ( 1 - f0 ) * pow(1 - abs( HdotV ), 5 );
-	
-    vec3 specularBRDF =  fr * visibility * distribution / (4.0 * NdotV *NdotL + 0.001);
+    float NdotL = clamp(max(dot(N, L), 0.0), 0, 1);
+    vec3 radiance = vec3(1.0) * GlobalSceneData.lightIntensity;
 
-	vec3 kd = (1.0 - fr) * ( 1.0 - metalness );
-	vec3 diffuseBRDF = kd * (1 / PI) * baseColor.rgb;
+    vec3 Lo = (diffuse + specular) * radiance * NdotL;
+    vec3 ambient = baseColor.rgb * AMBIENT * occlusion;
+    vec3 color = emissive.rgb + ambient + Lo;
 
-    vec3 materialColor = vec3(0,0,0);
-	vec3 ambient = baseColor.rgb * AMBIENT * occlusion;
-
-    vec3 directLight = (ambient + diffuseBRDF + specularBRDF) * NdotL * GlobalSceneData.lightIntensity;
-	materialColor = emissive.rgb * 0.5 + ambient + directLight;
-
-    vec4 transparent = texture(globalTextures[nonuniformEXT(PushConstants.transparent)], inUV);
-    if(transparent.r != 0 && transparent.g != 0 && transparent.b != 0)
+    if(transparency.a > 0.0 && length(transparency.rgb) > 0.001)
     {
-	    outFragColor = transparent;
+        color = mix(color, transparency.rgb, transparency.a);
     }
-    else
-    {
-	    outFragColor = vec4(materialColor, baseColor.a);
-    }*/
+    outFragColor = vec4(color, 1);
 }
