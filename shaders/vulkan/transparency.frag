@@ -46,8 +46,7 @@ void main()
         baseColor.rgba *= material.baseColorFactor.rgba;
         if(baseColor.a <= material.alphaCutoff)
         {
-            outFragColor = vec4(0.0);
-            return;
+            discard;
         }        
 
 		vec3 vNorm = normalize(inNormal);
