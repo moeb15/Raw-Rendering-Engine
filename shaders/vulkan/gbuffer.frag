@@ -38,12 +38,8 @@ void main()
 		PBRMaterial material = GlobalMaterialData.materials[inMaterialIndex];
 
 		vec4 baseColor = texture(globalTextures[nonuniformEXT(material.diffuse)], inUV);
-		if(baseColor.a <= material.alphaCutoff)
-		{
-			discard;
-		}
 		baseColor.rgba *= material.baseColorFactor.rgba;
-
+		
 		vec3 vNorm = normalize(inNormal);
 		vec3 vTan = normalize(inTangent.xyz);
 		vec3 bTan = cross(inNormal, inTangent.xyz) * inTangent.w;

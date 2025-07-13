@@ -27,7 +27,7 @@ void main()
 	//output the position of each vertex
 	gl_Position = GlobalSceneData.viewProj * PushConstants.transform * vec4(v.position, 1.0f);
 	outUV = vec2(v.u, v.v);
-	outNormal = v.normal;
+	outNormal = mat3(PushConstants.transform) * v.normal;
 	outMaterialIndex = PushConstants.materialIndex;
 	outTangent = v.tangent;
     outViewSpacePos = GlobalSceneData.view * PushConstants.transform * vec4(v.position, 1.0f);
