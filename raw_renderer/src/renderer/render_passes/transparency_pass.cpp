@@ -28,9 +28,9 @@ namespace Raw::GFX
         transparencyTex = device->CreateTexture(transparencyDesc);
 
         techiqueDesc.sDesc.numStages = 2;
-        techiqueDesc.sDesc.shaders[0].shaderName = "pbr_forward";
+        techiqueDesc.sDesc.shaders[0].shaderName = "transparency";
         techiqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX_STAGE;
-        techiqueDesc.sDesc.shaders[1].shaderName = "pbr_forward";
+        techiqueDesc.sDesc.shaders[1].shaderName = "transparency";
         techiqueDesc.sDesc.shaders[1].stage = EShaderStage::FRAGMENT_STAGE;
         
         techiqueDesc.pushConstant.offset = 0;
