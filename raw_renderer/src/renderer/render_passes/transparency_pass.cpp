@@ -127,9 +127,8 @@ namespace Raw::GFX
         IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
         TextureLoader::Instance()->Remove(TPASS_TEX);
 
-        std::pair<u32, u32> windowSize = device->GetBackBufferSize();
-        transparencyDesc.width = windowSize.first;
-        transparencyDesc.height = windowSize.second;
+        transparencyDesc.width = e.GetWidth();
+        transparencyDesc.height = e.GetHeight();
 
         transparencyTex = device->CreateTexture(transparencyDesc);
 

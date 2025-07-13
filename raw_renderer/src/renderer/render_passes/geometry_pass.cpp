@@ -185,21 +185,20 @@ namespace Raw::GFX
         TextureLoader::Instance()->Remove(GBUFFER_EMISSIVE);
         TextureLoader::Instance()->Remove(GBUFFER_VIEWSPACE_POS);
 
-        std::pair<u32, u32> windowSize = device->GetBackBufferSize();
-        diffuseDesc.width = windowSize.first;
-        diffuseDesc.height = windowSize.second;
+        diffuseDesc.width = e.GetWidth();
+        diffuseDesc.height = e.GetHeight();
 
-        normalDesc.width = windowSize.first;
-        normalDesc.height = windowSize.second;
+        normalDesc.width = e.GetWidth();
+        normalDesc.height = e.GetHeight();
 
-        roughMetalOccDesc.width = windowSize.first;
-        roughMetalOccDesc.height = windowSize.second;
+        roughMetalOccDesc.width = e.GetWidth();
+        roughMetalOccDesc.height = e.GetHeight();
 
-        emissiveDesc.width = windowSize.first;
-        emissiveDesc.height = windowSize.second;
+        emissiveDesc.width = e.GetWidth();
+        emissiveDesc.height = e.GetHeight();
 
-        viewspacePositionDesc.width = windowSize.first;
-        viewspacePositionDesc.height = windowSize.second;
+        viewspacePositionDesc.width = e.GetWidth();
+        viewspacePositionDesc.height = e.GetHeight();
 
         diffuse = device->CreateTexture(diffuseDesc);
         normals = device->CreateTexture(normalDesc);
