@@ -36,6 +36,46 @@ float heaviside( float v ) {
     else return 0.0;
 }
 
+float textureProj(vec3 projCoords, vec2 off)
+{
+	float closestDepth = texture(sampler2D(globalImages[GlobalSceneData.shadowMapIndex], shadowSampler), projCoords.xy + off).r;
+	float curDepth = projCoords.z;
+
+	float shadow = curDepth - BIAS > closestDepth ? 1.0 : 0.0;
+	return shadow;
+}
+
+float filterPCF(vec4 shadowPos)
+{
+	ivec2 texDim = textureSize(sampler2D(globalImages[GlobalSceneData.shadowMapIndex], shadowSampler), 0);
+	float scale = 1.5;
+	float dx = scale * 1.0 / float(texDim.x);
+	float dy = scale * 1.0 / float(texDim.y);
+
+	vec3 projCoords = shadowPos.xyz / shadowPos.w;
+	projCoords.xy = projCoords.xy * 0.5 + 0.5;
+
+	if(projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
+	{
+		return 0.0;
+	}
+
+	float shadowFactor = 0.0;
+	int count = 0;
+	int range = 1;
+
+	for(int x = -range; x <= range; x++)
+	{
+		for(int y = -range; y <= range; y++)
+		{
+			shadowFactor += textureProj(projCoords, vec2(dx * x, dy * y));
+			count++;
+		}
+	}
+	return shadowFactor / count;
+}
+
+
 void main() 
 {
 	if(inMaterialIndex < MAX_MATERIALS)
@@ -99,8 +139,10 @@ void main()
 		vec3 materialColor = vec3(0,0,0);
 		vec3 ambient = baseColor.rgb * AMBIENT * occlusion;
 
+		float shadow = filterPCF(inLightPos);
+
 		vec3 directLight = (ambient + diffuseBRDF + specularBRDF) * NdotL * GlobalSceneData.lightIntensity;
-		materialColor = emissive.rgb * 0.5 + ambient + directLight;
+		materialColor = emissive.rgb * 0.5 + ambient + directLight * (1.0 - shadow);
 
 		outFragColor = vec4(materialColor * baseColor.a, baseColor.a);
 	}

@@ -20,6 +20,7 @@ layout(push_constant) uniform constants{
     uint normal;
     uint emissive;
     uint viewspace;
+    uint lightClipSpacePos;
     uint transparent;
 } PushConstants;
 
@@ -30,6 +31,45 @@ layout(push_constant) uniform constants{
 float heaviside( float v ) {
     if ( v > 0.0 ) return 1.0;
     else return 0.0;
+}
+
+float textureProj(vec3 projCoords, vec2 off)
+{
+	float closestDepth = texture(sampler2D(globalImages[GlobalSceneData.shadowMapIndex], shadowSampler), projCoords.xy + off).r;
+	float curDepth = projCoords.z;
+
+	float shadow = curDepth - BIAS > closestDepth ? 1.0 : 0.0;
+	return shadow;
+}
+
+float filterPCF(vec4 shadowPos)
+{
+	ivec2 texDim = textureSize(sampler2D(globalImages[GlobalSceneData.shadowMapIndex], shadowSampler), 0);
+	float scale = 1.5;
+	float dx = scale * 1.0 / float(texDim.x);
+	float dy = scale * 1.0 / float(texDim.y);
+
+	vec3 projCoords = shadowPos.xyz / shadowPos.w;
+	projCoords.xy = projCoords.xy * 0.5 + 0.5;
+
+	if(projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0)
+	{
+		return 0.0;
+	}
+
+	float shadowFactor = 0.0;
+	int count = 0;
+	int range = 1;
+
+	for(int x = -range; x <= range; x++)
+	{
+		for(int y = -range; y <= range; y++)
+		{
+			shadowFactor += textureProj(projCoords, vec2(dx * x, dy * y));
+			count++;
+		}
+	}
+	return shadowFactor / count;
 }
 
 float distGGX(vec3 N, vec3 H, float roughness)
@@ -107,13 +147,16 @@ void main()
     float NdotL = clamp(max(dot(N, L), 0.0), 0, 1);
     vec3 radiance = vec3(1.0) * GlobalSceneData.lightIntensity;
 
+    vec4 lightClipSpacePos = texture(globalTextures[nonuniformEXT(PushConstants.lightClipSpacePos)], inUV);
+    float shadow = filterPCF(lightClipSpacePos);
+
     vec3 Lo = (diffuse + specular) * radiance * NdotL;
     vec3 ambient = baseColor.rgb * AMBIENT * occlusion;
-    vec3 color = emissive.rgb + ambient + Lo;
+    vec3 color = emissive.rgb + ambient + Lo * (1.0 - shadow);
 
     if(transparency.a > 0.0 && length(transparency.rgb) > 0.001)
     {
         color = mix(color, transparency.rgb, transparency.a);
     }
-    outFragColor = vec4(color, 1);
+    outFragColor = vec4(color, 1.0);
 }

@@ -37,7 +37,6 @@ float heaviside( float v ) {
     else return 0.0;
 }
 
-/*
 float textureProj(vec3 projCoords, vec2 off)
 {
 	float closestDepth = texture(sampler2D(globalImages[GlobalSceneData.shadowMapIndex], shadowSampler), projCoords.xy + off).r;
@@ -75,7 +74,7 @@ float filterPCF(vec4 shadowPos)
 		}
 	}
 	return shadowFactor / count;
-}*/
+}
 
 void main() 
 {
@@ -143,11 +142,10 @@ void main()
 		vec3 materialColor = vec3(0,0,0);
 		vec3 ambient = baseColor.rgb * AMBIENT * occlusion;
 		
-		// float shadow = filterPCF(inLightPos);
+		float shadow = filterPCF(inLightPos);
 
 		vec3 directLight = (ambient + diffuseBRDF + specularBRDF) * NdotL * GlobalSceneData.lightIntensity;
-		// materialColor = ambient + directLight * (1.0 - shadow);
-		materialColor = emissive.rgb * 0.5 + ambient + directLight;
+		materialColor = emissive.rgb * 0.5 + ambient + directLight * (1.0 - shadow);
 
 		outFragColor = vec4(materialColor, baseColor.a);
 	}
