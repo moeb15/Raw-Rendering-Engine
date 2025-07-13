@@ -17,6 +17,7 @@ namespace Raw::GFX
     class GeometryPass;
     class TransparencyPass;
     class FullScreenPass;
+    class ShadowPass;
 
     class Renderer
     {
@@ -31,6 +32,7 @@ namespace Raw::GFX
         GeometryPass* m_GeometryPass;
         TransparencyPass* m_TransparencyPass;
         FullScreenPass* m_FullScreenPass;
+        ShadowPass* m_ShadowPass;
 
         BufferHandle m_SceneDataBuffer;
     };

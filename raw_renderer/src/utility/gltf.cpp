@@ -120,7 +120,17 @@ namespace Raw::Utils
                             glm::vec2 uv = texCoordBuffer ? glm::make_vec2(&texCoordBuffer[v * 2]) : glm::vec2(0.0f);
                             vert.texCoordU = uv.x;
                             vert.texCoordV = uv.y;
-                            vert.tangent = tangentsBuffer ? glm::make_vec4(&tangentsBuffer[v * 4]) : glm::vec4(0.0f);
+                            if(tangentsBuffer)
+                            {
+                                vert.tangent = glm::make_vec4(&tangentsBuffer[v * 4]);
+                            }
+                            else
+                            {
+                                glm::vec3 arbitraryVec = vert.normal;
+                                arbitraryVec.x *= -1;
+                                glm::vec3 temp = glm::cross(vert.normal, arbitraryVec);
+                                vert.tangent = glm::vec4(temp.x, temp.y, temp.z, 1.0f);
+                            }
 
                             vertices.push_back(vert);
                         }
@@ -196,7 +206,7 @@ namespace Raw::Utils
             for(u64 i = 0; i < input.images.size(); i++)
             {
                 Image& glTFImage = input.images[i];
-                RAW_DEBUG("Loading glTF image: %s", glTFImage.name.c_str());
+                // RAW_DEBUG("Loading glTF image: %s", glTFImage.name.c_str());
                 u8* buffer = nullptr;
                 u64 bufferSize = 0;
 

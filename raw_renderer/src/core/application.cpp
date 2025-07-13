@@ -17,7 +17,8 @@
 
 namespace Raw
 {
-    Scene* testScene = nullptr;
+    std::string defaultSceneModel = RAW_RESOURCES_DIR + "/GLTF/Sponza/glTF/Sponza.gltf";
+    Scene* activeScene = nullptr;
     GFX::Renderer* activeRenderPath = nullptr;
 
     void Application::Initialize(const ApplicationConfig& config)
@@ -77,12 +78,11 @@ namespace Raw
         activeRenderPath->Init();
         
         GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
-        std::string gltfScene = "C:/Users/Mujta/VSCode Projects/renderer/assets/GLTF/Sponza/glTF/Sponza.gltf";
-        testScene = new Scene();
-        testScene->Init(gltfScene, device);
+        activeScene = new Scene();
+        activeScene->Init(defaultSceneModel, device);
 
-        glm::vec3 pos(0.0f, 0.0f, 1.f);
-        glm::vec3 target(0.0f,0.0f, 0.f);
+        glm::vec3 pos(0.0f, 0.0f, 0.f);
+        glm::vec3 target(0.0f,0.0f, -1.f);
         glm::vec3 up(0.f,1.f,0.0f);
         m_Camera = new GFX::Camera();
         m_Camera->Init(0.1f, 1000.f, 75.f, 16.f / 9.f, pos, target, up);
@@ -104,7 +104,7 @@ namespace Raw
             if(!m_Suspended)
             {
                 m_Camera->Update(deltaTime);
-                activeRenderPath->Render(testScene, *m_Camera, deltaTime);
+                activeRenderPath->Render(activeScene, *m_Camera, deltaTime);
 
                 endTime = Timer::Get()->Now();
                 deltaTime = Timer::Get()->DeltaSeconds(curTime, endTime);
@@ -121,12 +121,11 @@ namespace Raw
     void Application::Shutdown()
     {
         activeRenderPath->Shutdown();
-        testScene->Shutdown();
+        activeScene->Shutdown();
 
         delete activeRenderPath;
-        delete testScene;
+        delete activeScene;
         delete m_Camera;
-
         RAW_INFO("ResourceManager shutting down...");
         ResourceManager::Get()->Shutdown();
         ServiceLocator::Get()->GetService(Input::k_ServiceName)->Shutdown();

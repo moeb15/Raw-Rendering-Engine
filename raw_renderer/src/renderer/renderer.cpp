@@ -12,6 +12,7 @@
 #include "renderer/render_passes/geometry_pass.hpp"
 #include "renderer/render_passes/transparency_pass.hpp"
 #include "renderer/render_passes/fullscreen_pass.hpp"
+#include "renderer/render_passes/shadow_pass.hpp"
 
 namespace Raw::GFX
 {
@@ -31,6 +32,9 @@ namespace Raw::GFX
         m_FullScreenPass = new FullScreenPass();
         m_FullScreenPass->Init(device);
         m_FullScreenPass->UpdateFullScreenData();
+
+        m_ShadowPass = new ShadowPass();
+        m_ShadowPass->Init(device);
 
         BufferDesc sceneDataDesc;
         sceneDataDesc.bufferSize = sizeof(GlobalSceneData);
@@ -52,15 +56,19 @@ namespace Raw::GFX
         delete m_GeometryPass;
         delete m_TransparencyPass;
         delete m_FullScreenPass;
+        delete m_ShadowPass;
     }
 
     void Renderer::Render(Scene* scene, Camera& camera, f32 dt)
     {
         elapsedTime += dt;
 
+        TextureResource* tex = (TextureResource*)TextureLoader::Instance()->Get(DIR_SHADOW_MAP);
+
         sceneData.view = camera.GetViewMatrix();
         sceneData.projection = camera.GetProjectionMatrix();
         sceneData.viewProj = sceneData.projection * sceneData.view;
+        if(tex) sceneData.shadowMapIndex = tex->handle.id;
 
         IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
         
@@ -68,7 +76,6 @@ namespace Raw::GFX
         device->UnmapBuffer(m_SceneDataBuffer, EBufferMapType::SCENE);
 
         scene->Update(device);
-        m_FullScreenPass->UpdateFullScreenData();
 
         device->BeginOverlay();
         Editor::Get()->Render(dt, *scene->GetSceneData(), sceneData);
@@ -80,10 +87,9 @@ namespace Raw::GFX
         cmd->BeginCommandBuffer();
         cmd->Clear(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
        
-        m_GeometryPass->ExecuteAsync(device, scene->GetSceneData());
-        m_TransparencyPass->ExecuteAsync(device, scene->GetSceneData());
-        JobSystem::Wait();
-        
+        m_GeometryPass->Execute(device, cmd, scene->GetSceneData());
+        m_TransparencyPass->Execute(device, cmd, scene->GetSceneData());
+        m_ShadowPass->Execute(device, cmd, scene->GetSceneData());
         m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
 
         device->EndFrame();

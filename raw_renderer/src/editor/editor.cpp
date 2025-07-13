@@ -36,7 +36,8 @@ namespace Raw
         ImGui::SliderFloat("Intensity", &globalData.lightIntensity, 0.f, 100.f, "%.1f");
         ImGui::End();
         globalData.lightDir = glm::normalize(globalData.lightDir);
-        globalData.lightView = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(-globalData.lightDir.x, -globalData.lightDir.y, -globalData.lightDir.z), glm::vec3(0, 0, 1));
+        globalData.lightView = glm::lookAt(glm::vec3(0, 15.f, 0), glm::vec3(-globalData.lightDir.x, -globalData.lightDir.y, -globalData.lightDir.z), glm::vec3(0, 0, 1));
+        globalData.lightProj = glm::ortho(-20.f, 20.f, -20.f, 20.f, -15.f, 15.f);
     
         ImGui::Begin("Meshes");
         for(u32 i = 0; i < sceneData.meshes.size(); i++)
