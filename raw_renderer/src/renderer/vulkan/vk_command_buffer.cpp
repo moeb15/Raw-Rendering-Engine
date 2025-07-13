@@ -320,6 +320,7 @@ namespace Raw::GFX
             u32 normal;
             u32 emissive;
             u32 viewspace;
+            u32 lightClipSpacePos;
             u32 transparent;
         } pushConstant;
 
@@ -330,6 +331,7 @@ namespace Raw::GFX
         pushConstant.normal = data.normal;
         pushConstant.emissive = data.emissive;
         pushConstant.viewspace = data.viewspace;
+        pushConstant.lightClipSpacePos = data.lightClipSpacePos;
         pushConstant.transparent = data.transparent;
 
         vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, pcSize, &pushConstant);

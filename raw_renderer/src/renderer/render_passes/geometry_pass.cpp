@@ -10,7 +10,7 @@ namespace Raw::GFX
     static TextureHandle defaultTexture;
     static TextureHandle defaultEmissive;
     static TextureHandle errorTexture;
-    static TextureHandle geometryPassImages[5];
+    static TextureHandle geometryPassImages[6];
 
     void GeometryPass::Init(IGFXDevice* device)
     {
@@ -68,6 +68,16 @@ namespace Raw::GFX
         viewspacePositionDesc.format = ETextureFormat::R8G8B8A8_UNORM;
         viewspacePosition = device->CreateTexture(viewspacePositionDesc);
 
+        lightClipSpacePositionDesc.depth = 1;
+        lightClipSpacePositionDesc.width = windowSize.first;
+        lightClipSpacePositionDesc.height = windowSize.second;
+        lightClipSpacePositionDesc.isMipmapped = false;
+        lightClipSpacePositionDesc.isStorageImage = true;
+        lightClipSpacePositionDesc.isRenderTarget = true;
+        lightClipSpacePositionDesc.type = ETextureType::TEXTURE2D;
+        lightClipSpacePositionDesc.format = ETextureFormat::R8G8B8A8_UNORM;
+        lightClipSpacePosition = device->CreateTexture(lightClipSpacePositionDesc);
+
         techiqueDesc.sDesc.numStages = 2;
         techiqueDesc.sDesc.shaders[0].shaderName = "gbuffer";
         techiqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX_STAGE;
@@ -101,12 +111,13 @@ namespace Raw::GFX
         techiqueDesc.bsDesc[0].dstAlpha = EBlendState::ZERO;
         techiqueDesc.bsDesc[0].alphaOp = EBlendOp::ADD;
 
-        techiqueDesc.numImageAttachments = 5;
         geometryPassImages[0] = diffuse;
         geometryPassImages[1] = normals;
         geometryPassImages[2] = roughMetalOccMap;
         geometryPassImages[3] = emissiveMap;
         geometryPassImages[4] = viewspacePosition;
+        geometryPassImages[5] = lightClipSpacePosition;
+        techiqueDesc.numImageAttachments = ArraySize(geometryPassImages);
         techiqueDesc.imageAttachments = geometryPassImages;
         techiqueDesc.name = "Geometry Pass";
 
@@ -124,6 +135,7 @@ namespace Raw::GFX
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_RM_OCC, roughMetalOccMap);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_EMISSIVE, emissiveMap);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_VIEWSPACE_POS, viewspacePosition);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_LIGHT_CLIP_POS, lightClipSpacePosition);
     }
 
     void GeometryPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
@@ -184,6 +196,7 @@ namespace Raw::GFX
         TextureLoader::Instance()->Remove(GBUFFER_RM_OCC);
         TextureLoader::Instance()->Remove(GBUFFER_EMISSIVE);
         TextureLoader::Instance()->Remove(GBUFFER_VIEWSPACE_POS);
+        TextureLoader::Instance()->Remove(GBUFFER_LIGHT_CLIP_POS);
 
         diffuseDesc.width = e.GetWidth();
         diffuseDesc.height = e.GetHeight();
@@ -199,24 +212,30 @@ namespace Raw::GFX
 
         viewspacePositionDesc.width = e.GetWidth();
         viewspacePositionDesc.height = e.GetHeight();
+        
+        lightClipSpacePositionDesc.width = e.GetWidth();
+        lightClipSpacePositionDesc.height = e.GetHeight();
 
         diffuse = device->CreateTexture(diffuseDesc);
         normals = device->CreateTexture(normalDesc);
         roughMetalOccMap = device->CreateTexture(roughMetalOccDesc);
         emissiveMap = device->CreateTexture(emissiveDesc);
         viewspacePosition = device->CreateTexture(viewspacePositionDesc);
+        lightClipSpacePosition = device->CreateTexture(lightClipSpacePositionDesc);
 
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_DIFFUSE, diffuse);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_NORMAL, normals);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_RM_OCC, roughMetalOccMap);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_EMISSIVE, emissiveMap);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_VIEWSPACE_POS, viewspacePosition);
+        TextureLoader::Instance()->CreateFromHandle(GBUFFER_LIGHT_CLIP_POS, lightClipSpacePosition);
 
         geometryPassImages[0] = diffuse;
         geometryPassImages[1] = normals;
         geometryPassImages[2] = roughMetalOccMap;
         geometryPassImages[3] = emissiveMap;
         geometryPassImages[4] = viewspacePosition;
+        geometryPassImages[5] = lightClipSpacePosition;
 
         device->UpdateGraphicsPipelineImageAttachments(technique.gfxPipeline, ArraySize(geometryPassImages), geometryPassImages);
 

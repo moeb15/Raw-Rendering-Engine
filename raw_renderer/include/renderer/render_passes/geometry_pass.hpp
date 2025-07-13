@@ -11,6 +11,7 @@ namespace Raw::GFX
     #define GBUFFER_RM_OCC               "roughMetalOcc"
     #define GBUFFER_EMISSIVE             "emissive"
     #define GBUFFER_VIEWSPACE_POS        "viewspacePosition"
+    #define GBUFFER_LIGHT_CLIP_POS       "lightClipPosition"
 
     class GeometryPass : public IRenderPass
     {
@@ -30,12 +31,14 @@ namespace Raw::GFX
         TextureHandle roughMetalOccMap;
         TextureHandle emissiveMap;
         TextureHandle viewspacePosition;
+        TextureHandle lightClipSpacePosition;
 
         TextureDesc diffuseDesc;
         TextureDesc normalDesc;
         TextureDesc roughMetalOccDesc;
         TextureDesc emissiveDesc;
         TextureDesc viewspacePositionDesc;
+        TextureDesc lightClipSpacePositionDesc;
 
     private:
         bool OnWindowResize(const WindowResizeEvent& e);

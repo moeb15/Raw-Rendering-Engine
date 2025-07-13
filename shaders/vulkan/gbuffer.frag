@@ -20,7 +20,8 @@ layout (location = 0) in vec2 inUV;
 layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec4 inTangent;
 layout (location = 3) in vec4 inViewSpacePos;
-layout (location = 4) in flat uint inMaterialIndex;
+layout (location = 4) in vec4 inLightClipSpacePos;
+layout (location = 5) in flat uint inMaterialIndex;
 
 
 //output write
@@ -29,6 +30,7 @@ layout (location = 1) out vec4 outNormals;
 layout (location = 2) out vec4 outRMOcc;
 layout (location = 3) out vec4 outEmissive;
 layout (location = 4) out vec4 outViewSpacePos;
+layout (location = 5) out vec4 outLightClipSpacePos;
 
 
 void main() 
@@ -60,5 +62,6 @@ void main()
         outRMOcc = vec4(roughness, metalness, occlusion, 1.0);
         outEmissive = emissive;
         outViewSpacePos = inViewSpacePos;
+		outLightClipSpacePos = inLightClipSpacePos;
 	}
 }

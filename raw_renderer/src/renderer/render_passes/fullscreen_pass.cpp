@@ -75,6 +75,9 @@ namespace Raw::GFX
         tex = (TextureResource*)TextureLoader::Instance()->Get(GBUFFER_VIEWSPACE_POS);
         data.viewspace = tex->handle.id;
 
+        tex = (TextureResource*)TextureLoader::Instance()->Get(GBUFFER_LIGHT_CLIP_POS);
+        data.lightClipSpacePos = tex->handle.id;
+
         tex = (TextureResource*)TextureLoader::Instance()->Get(TPASS_TEX);
         data.transparent = tex->handle.id;
     }

@@ -14,8 +14,8 @@ namespace Raw::GFX
         alignas(16) glm::mat4 view{ 1.f };
         alignas(16) glm::mat4 projection{ 1.f };
         alignas(16) glm::mat4 viewProj{ 1.f };
-        alignas(16) glm::mat4 lightView{ glm::lookAt(glm::vec3(-0.5f, -1.0f, 0.0f), glm::vec3(0), glm::vec3(0, 1, 0)) };
-        alignas(16) glm::mat4 lightProj{ glm::ortho(-20.f, 20.f, -20.f, 20.f, -20.f, 20.f) };
+        alignas(16) glm::mat4 lightView{ glm::lookAt(glm::vec3(-0.5f, -1.0f, 0.0f), glm::vec3(0), glm::vec3(0, 0, 1)) };
+        alignas(16) glm::mat4 lightProj{ glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 20.f) };
         alignas(16) glm::vec4 lightDir{ -0.5f, -1.f, 0.f, 0.f };
         f32 lightIntensity{ 1.f };
         u32 shadowMapIndex{ U32_MAX };
@@ -61,6 +61,7 @@ namespace Raw::GFX
         i32 normal{ -1 };
         i32 emissive{ -1 };
         i32 viewspace{ -1 };
+        i32 lightClipSpacePos{ -1 };
         i32 transparent{ -1 };
     };
 

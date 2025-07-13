@@ -8,7 +8,8 @@ layout (location = 0) out vec2 outUV;
 layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec4 outTangent;
 layout (location = 3) out vec4 outViewSpacePos;
-layout (location = 4) out uint outMaterialIndex;
+layout (location = 4) out vec4 outLightClipSpacePos;
+layout (location = 5) out uint outMaterialIndex;
 
 layout(buffer_reference, std430) readonly buffer VertexBuffer{
 	Vertex vertices[];
@@ -31,4 +32,5 @@ void main()
 	outMaterialIndex = PushConstants.materialIndex;
 	outTangent = v.tangent;
     outViewSpacePos = GlobalSceneData.view * PushConstants.transform * vec4(v.position, 1.0f);
+	outLightClipSpacePos = GlobalSceneData.lightProj * GlobalSceneData.lightView * PushConstants.transform * vec4(v.position, 1.0f);
 }
