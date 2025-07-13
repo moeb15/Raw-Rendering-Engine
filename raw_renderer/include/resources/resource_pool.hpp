@@ -52,7 +52,7 @@ namespace Raw
         u64 allocSize = m_PoolSize * (m_ResourceSize + sizeof(u32));
         m_Data = new u8[allocSize];
 
-        m_FreeIndices = (u32*)(m_Data + poolSize + m_ResourceSize);
+        m_FreeIndices = (u32*)(m_Data + poolSize * m_ResourceSize);
         m_FreeIndicesHead = 0;
 
         for(u32 i = 0; i < m_PoolSize; i++)
