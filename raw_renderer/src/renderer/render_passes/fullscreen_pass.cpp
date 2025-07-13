@@ -4,6 +4,7 @@
 #include "core/servicelocator.hpp"
 #include "resources/buffer_loader.hpp"
 #include "resources/texture_loader.hpp"
+#include "events/event_manager.hpp"
 #include "core/job_system.hpp"
 
 namespace Raw::GFX
@@ -12,6 +13,9 @@ namespace Raw::GFX
 
     void FullScreenPass::Init(IGFXDevice* device)
     {
+        m_ResizeHandler = BIND_EVENT_FN(FullScreenPass::OnWindowResize);
+        EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_ResizeHandler, WindowResizeEvent), WindowResizeEvent::GetStaticEventType());
+
         techiqueDesc.sDesc.numStages = 2;
         techiqueDesc.sDesc.shaders[0].shaderName = "fullscreen";
         techiqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX_STAGE;
@@ -73,5 +77,12 @@ namespace Raw::GFX
 
         tex = (TextureResource*)TextureLoader::Instance()->Get(TPASS_TEX);
         data.transparent = tex->handle.id;
+    }
+
+    bool FullScreenPass::OnWindowResize(const WindowResizeEvent& e)
+    {
+        UpdateFullScreenData();
+
+        return false;
     }
 }

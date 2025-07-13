@@ -1,6 +1,8 @@
 #pragma once
 
 #include "renderer/render_passes/render_pass.hpp"
+#include "events/core_events.hpp"
+#include "events/event_handler.hpp"
 
 namespace Raw::GFX
 {
@@ -17,5 +19,9 @@ namespace Raw::GFX
 
         GPUTechnique technique;
         GraphicsPipelineDesc techiqueDesc;
+
+    private:
+        bool OnWindowResize(const WindowResizeEvent& e);
+        EventHandler<WindowResizeEvent> m_ResizeHandler;
     };
 }
