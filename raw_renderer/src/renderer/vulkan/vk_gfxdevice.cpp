@@ -1856,6 +1856,9 @@ namespace Raw::GFX
             vkDestroyShaderModule(m_LogicalDevice, shaderModules[i], m_AllocCallbacks);
         }
 
+        SetResourceName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (u64)gfxPipeline->pipelineLayout, desc.name);
+        SetResourceName(VK_OBJECT_TYPE_PIPELINE, (u64)gfxPipeline->pipeline, desc.name);
+
         return handle;
     }
 
@@ -2059,6 +2062,12 @@ namespace Raw::GFX
         VulkanPipeline* pipeline = GetGraphicsPipeline(handle);
         pipeline->numImageAttachments = numImageAttachments;
         pipeline->imageAttachements = attachments;
+    }
+
+    void VulkanGFXDevice::UpdateGraphicsPipelineDepthAttachment(const GraphicsPipelineHandle& handle, TextureHandle* textureHandle)
+    {
+        VulkanPipeline* pipeline = GetGraphicsPipeline(handle);
+        pipeline->depthAttachment = textureHandle;
     }
 
     VulkanTexture* VulkanGFXDevice::GetTexture(const TextureHandle& handle)
