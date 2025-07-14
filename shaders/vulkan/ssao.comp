@@ -1,0 +1,93 @@
+#version 460
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rgba8, set = 0, binding = 0) uniform image2D outputSSAO;
+layout(set = 0, binding = 1) uniform sampler2D depthBuffer;
+
+const float nearDist = 0.1f;
+const float farDist = 100.0f;
+
+vec2 generateRandomNoise(in vec2 coord)
+{
+    float noiseX = (fract(sin(dot(coord, vec2(12.9898, 78.233))) * 43758.5453));
+    float noiseY = (fract(sin(dot(coord, vec2(12.9898, 78.233) * 2.0)) * 43758.5453));
+
+    return vec2(noiseX, noiseY) * 0.004;
+}
+
+float calculateLinearDepth(float depth)
+{
+    return (2.0 * nearDist) / (farDist + nearDist - depth * (farDist - nearDist));
+}
+
+float compareDepths(float d1, float d2)
+{
+    const float aoCap = 0.5;
+    const float aoMultiplier = 50.0;
+    const float depthTolerance = 0.001;
+    const float aoRange = 60.0;
+    float depthDiff = sqrt(clamp(1.0 - (d1 - d2) / (aoRange / (farDist - nearDist)), 0.0, 1.0));
+    float ao = min(aoCap, max(0.0, d1 - d2 - depthTolerance) * aoMultiplier) * depthDiff;
+
+    return ao;
+}
+
+void main()
+{
+    ivec2 size = imageSize(outputSSAO);
+    vec2 sizeF = vec2(size);
+
+    if(gl_GlobalInvocationID.x >= size.x || gl_GlobalInvocationID.y >= size.y)
+    {
+        return;
+    }
+
+    imageStore(outputSSAO, ivec2(gl_GlobalInvocationID.xy), vec4(0));
+    
+    vec2 uv = (vec2(gl_GlobalInvocationID.xy) + vec2(0.5f)) / sizeF;
+    ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
+
+    float depthBufferValue = texelFetch(depthBuffer, pixelPos, 0).r;
+    float depth = calculateLinearDepth(depthBufferValue);
+
+    float aspectRatio = sizeF.x / sizeF.y;
+    vec2 noise = generateRandomNoise(vec2(pixelPos));
+
+    float w = (1.0 / sizeF.x) / clamp(depth, 0.05, 1.0) + (noise.x * (1.0 - noise.x));
+    float h = (1.0 / sizeF.y) / clamp(depth, 0.05, 1.0) + (noise.y * (1.0 - noise.y));
+
+    w *= sizeF.x / 2.0;
+    h *= sizeF.y / 2.0;
+
+    float sampleWidth;
+    float sampleHeight;
+
+    float ao = 0.0;
+    float totalSamples = 0.0;
+    float fade = 1.0;
+
+    const int NUM_RINGS = 3;
+    const int NUM_SAMPLES = 6;
+
+    for(int i = 0; i < NUM_RINGS; i++)
+    {
+        fade *= 0.5;
+        for(int j = 0; j < NUM_SAMPLES; j++)
+        {
+            float step = 3.14159265 * 2.0 / float(NUM_SAMPLES * i);
+            
+            sampleWidth = (cos(float(j) * step) * float(i));
+            sampleHeight = (sin(float(j) * step) * float(i));
+            
+            float newDepthValue = texelFetch(depthBuffer, pixelPos + ivec2(sampleWidth * w, sampleHeight * h), 0).r;
+            ao += compareDepths(depth, calculateLinearDepth(newDepthValue)) * fade;
+            totalSamples += 1.0 * fade;
+        }
+    }
+    
+    ao /= totalSamples;
+    ao = 1.0 - ao;
+
+    imageStore(outputSSAO, ivec2(gl_GlobalInvocationID.xy), vec4(ao, ao, ao, 1.0));
+}
