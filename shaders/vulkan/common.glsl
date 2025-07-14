@@ -1,5 +1,8 @@
 #define MAX_MATERIALS 512
 #define INVALID_MATERIAL_INDEX 4294967295
+#define PI 3.1415926538
+#define AMBIENT 0.5
+#define BIAS 0.0005
 
 layout (set = 0, binding = 0) uniform sceneData{
 	mat4 view;	
@@ -32,3 +35,45 @@ struct Vertex{
 	float v;
 	vec4 tangent;
 };
+
+float heaviside( float v ) {
+    if ( v > 0.0 ) return 1.0;
+    else return 0.0;
+}
+
+float distGGX(vec3 N, vec3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+
+    return (a2 * heaviside(NdotH)) / max(denom, 0.0001);
+}
+
+float geomSchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    float denom = NdotV * (1.0 - k) + k;
+    
+    return NdotV / denom;
+}
+
+float geomSmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx1 = geomSchlickGGX(NdotV, roughness);
+    float ggx2 = geomSchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) *pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
