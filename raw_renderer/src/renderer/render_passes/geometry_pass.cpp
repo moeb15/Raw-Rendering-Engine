@@ -69,8 +69,8 @@ namespace Raw::GFX
         viewspacePosition = device->CreateTexture(viewspacePositionDesc);
 
         lightClipSpacePositionDesc.depth = 1;
-        lightClipSpacePositionDesc.width = windowSize.first;
-        lightClipSpacePositionDesc.height = windowSize.second;
+        lightClipSpacePositionDesc.width = SHADOW_MAP_SIZE;
+        lightClipSpacePositionDesc.height = SHADOW_MAP_SIZE;
         lightClipSpacePositionDesc.isMipmapped = false;
         lightClipSpacePositionDesc.isStorageImage = true;
         lightClipSpacePositionDesc.isRenderTarget = true;
@@ -196,7 +196,6 @@ namespace Raw::GFX
         TextureLoader::Instance()->Remove(GBUFFER_RM_OCC);
         TextureLoader::Instance()->Remove(GBUFFER_EMISSIVE);
         TextureLoader::Instance()->Remove(GBUFFER_VIEWSPACE_POS);
-        TextureLoader::Instance()->Remove(GBUFFER_LIGHT_CLIP_POS);
 
         diffuseDesc.width = e.GetWidth();
         diffuseDesc.height = e.GetHeight();
@@ -213,22 +212,17 @@ namespace Raw::GFX
         viewspacePositionDesc.width = e.GetWidth();
         viewspacePositionDesc.height = e.GetHeight();
         
-        lightClipSpacePositionDesc.width = e.GetWidth();
-        lightClipSpacePositionDesc.height = e.GetHeight();
-
         diffuse = device->CreateTexture(diffuseDesc);
         normals = device->CreateTexture(normalDesc);
         roughMetalOccMap = device->CreateTexture(roughMetalOccDesc);
         emissiveMap = device->CreateTexture(emissiveDesc);
         viewspacePosition = device->CreateTexture(viewspacePositionDesc);
-        lightClipSpacePosition = device->CreateTexture(lightClipSpacePositionDesc);
 
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_DIFFUSE, diffuse);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_NORMAL, normals);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_RM_OCC, roughMetalOccMap);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_EMISSIVE, emissiveMap);
         TextureLoader::Instance()->CreateFromHandle(GBUFFER_VIEWSPACE_POS, viewspacePosition);
-        TextureLoader::Instance()->CreateFromHandle(GBUFFER_LIGHT_CLIP_POS, lightClipSpacePosition);
 
         geometryPassImages[0] = diffuse;
         geometryPassImages[1] = normals;
