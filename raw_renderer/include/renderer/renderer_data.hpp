@@ -8,6 +8,8 @@
 
 namespace Raw::GFX
 {
+    #define SHADOW_MAP_SIZE 2048
+
     // must be 256 byte aligned
     struct GlobalSceneData
     {

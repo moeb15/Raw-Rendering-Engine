@@ -2,19 +2,15 @@
 #include "core/servicelocator.hpp"
 #include "resources/buffer_loader.hpp"
 #include "resources/texture_loader.hpp"
-#include "events/event_manager.hpp"
 #include "core/job_system.hpp"
 
 namespace Raw::GFX
 {
     void ShadowPass::Init(IGFXDevice* device)
     {
-        m_ResizeHandler = BIND_EVENT_FN(ShadowPass::OnWindowResize);
-        EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_ResizeHandler, WindowResizeEvent), WindowResizeEvent::GetStaticEventType());
-
         shadowMapDesc.depth = 1;
-        shadowMapDesc.width = device->GetBackBufferSize().first;
-        shadowMapDesc.height = device->GetBackBufferSize().second;
+        shadowMapDesc.width = SHADOW_MAP_SIZE;
+        shadowMapDesc.height = SHADOW_MAP_SIZE;
         shadowMapDesc.format = ETextureFormat::D32_SFLOAT;
         shadowMapDesc.isMipmapped = false;
         shadowMapDesc.isRenderTarget = true;
@@ -99,22 +95,5 @@ namespace Raw::GFX
                 device->SubmitCommandBuffer(cmd);
             }
         );
-    }
-    
-    bool ShadowPass::OnWindowResize(const WindowResizeEvent& e)
-    {
-        IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
-        TextureLoader::Instance()->Remove(DIR_SHADOW_MAP);
-
-        shadowMapDesc.width = e.GetWidth();
-        shadowMapDesc.height = e.GetHeight();
-
-        shadowMap = device->CreateTexture(shadowMapDesc, true);
-
-        TextureLoader::Instance()->CreateFromHandle(DIR_SHADOW_MAP, shadowMap);
-
-        device->UpdateGraphicsPipelineDepthAttachment(technique.gfxPipeline, &shadowMap);
-
-        return false;
     }
 }
