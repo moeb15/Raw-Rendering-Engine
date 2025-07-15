@@ -1,9 +1,15 @@
 #version 460
+#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout(rgba8, set = 0, binding = 0) uniform image2D outputSSAO;
-layout(set = 0, binding = 1) uniform sampler2D depthBuffer;
+layout(set = 1, binding = 0) uniform sampler2D globalTextures[];
+layout(rgba8, set = 1, binding = 3) uniform image2D globalImages[];
+
+layout(push_constant) uniform constants{
+    uint depthIndex;
+    uint outputSSAOIndex;
+} PushConstants;
 
 const float nearDist = 0.1f;
 const float farDist = 100.0f;
@@ -35,7 +41,7 @@ float compareDepths(float d1, float d2)
 
 void main()
 {
-    ivec2 size = imageSize(outputSSAO);
+    ivec2 size = imageSize(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)]);
     vec2 sizeF = vec2(size);
 
     if(gl_GlobalInvocationID.x >= size.x || gl_GlobalInvocationID.y >= size.y)
@@ -43,12 +49,12 @@ void main()
         return;
     }
 
-    imageStore(outputSSAO, ivec2(gl_GlobalInvocationID.xy), vec4(0));
+    imageStore(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)], ivec2(gl_GlobalInvocationID.xy), vec4(0));
     
     vec2 uv = (vec2(gl_GlobalInvocationID.xy) + vec2(0.5f)) / sizeF;
     ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
 
-    float depthBufferValue = texelFetch(depthBuffer, pixelPos, 0).r;
+    float depthBufferValue = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos, 0).r;
     float depth = calculateLinearDepth(depthBufferValue);
 
     float aspectRatio = sizeF.x / sizeF.y;
@@ -80,7 +86,7 @@ void main()
             sampleWidth = (cos(float(j) * step) * float(i));
             sampleHeight = (sin(float(j) * step) * float(i));
             
-            float newDepthValue = texelFetch(depthBuffer, pixelPos + ivec2(sampleWidth * w, sampleHeight * h), 0).r;
+            float newDepthValue = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos + ivec2(sampleWidth * w, sampleHeight * h), 0).r;
             ao += compareDepths(depth, calculateLinearDepth(newDepthValue)) * fade;
             totalSamples += 1.0 * fade;
         }
@@ -89,5 +95,5 @@ void main()
     ao /= totalSamples;
     ao = 1.0 - ao;
 
-    imageStore(outputSSAO, ivec2(gl_GlobalInvocationID.xy), vec4(ao, ao, ao, 1.0));
+    imageStore(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)], ivec2(gl_GlobalInvocationID.xy), vec4(ao, ao, ao, 1.0));
 }
