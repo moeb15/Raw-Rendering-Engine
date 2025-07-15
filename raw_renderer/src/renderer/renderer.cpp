@@ -13,6 +13,7 @@
 #include "renderer/render_passes/transparency_pass.hpp"
 #include "renderer/render_passes/fullscreen_pass.hpp"
 #include "renderer/render_passes/shadow_pass.hpp"
+#include "renderer/render_passes/ssao_pass.hpp"
 
 namespace Raw::GFX
 {
@@ -28,6 +29,9 @@ namespace Raw::GFX
         
         m_TransparencyPass = new TransparencyPass();
         m_TransparencyPass->Init(device);
+
+        m_SSAOPass = new SSAOPass();
+        m_SSAOPass->Init(device);
 
         m_FullScreenPass = new FullScreenPass();
         m_FullScreenPass->Init(device);
@@ -57,6 +61,7 @@ namespace Raw::GFX
         delete m_TransparencyPass;
         delete m_FullScreenPass;
         delete m_ShadowPass;
+        delete m_SSAOPass;
     }
 
     void Renderer::Render(Scene* scene, Camera& camera, f32 dt)
@@ -90,6 +95,7 @@ namespace Raw::GFX
         m_GeometryPass->Execute(device, cmd, scene->GetSceneData());
         m_TransparencyPass->Execute(device, cmd, scene->GetSceneData());
         m_ShadowPass->Execute(device, cmd, scene->GetSceneData());
+        m_SSAOPass->Execute(device, cmd, nullptr);
         m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
 
         device->EndFrame();

@@ -43,7 +43,7 @@ namespace Raw::GFX
         VkPipeline pipeline{ VK_NULL_HANDLE };
         VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
         VkDescriptorSetLayout dsLayout{ VK_NULL_HANDLE };
-        VkDescriptorSet set{ VK_NULL_HANDLE };
+        VkDescriptorSet set[MAX_SWAPCHAIN_IMAGES];
         TextureHandle* imageAttachements{ nullptr };
         u32 numImageAttachments{ 0 };
         TextureHandle* depthAttachment{ nullptr };

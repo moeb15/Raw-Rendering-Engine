@@ -9,6 +9,7 @@
 namespace Raw::GFX
 {
     #define SHADOW_MAP_SIZE 2048
+    #define AMBIENT_OCCLUSION_TEX "aoTexture"
 
     // must be 256 byte aligned
     struct GlobalSceneData
@@ -64,7 +65,14 @@ namespace Raw::GFX
         i32 emissive{ -1 };
         i32 viewspace{ -1 };
         i32 lightClipSpacePos{ -1 };
+        i32 occlusion{ -1 };
         i32 transparent{ -1 };
+    };
+
+    struct AOData
+    {
+        i32 depthBuffer{ -1 };
+        i32 outputAOTexture{ -1 };
     };
 
     struct MeshData
