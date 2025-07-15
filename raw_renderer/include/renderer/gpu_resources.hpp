@@ -289,7 +289,7 @@ namespace Raw::GFX
     enum class ERenderingOp : u8
     {
         CLEAR,
-        STORE,
+        // STORE,
         LOAD
     };
 
