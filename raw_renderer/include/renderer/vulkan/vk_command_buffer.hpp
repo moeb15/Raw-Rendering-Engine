@@ -25,7 +25,7 @@ namespace Raw::GFX
         virtual void TransitionImage(const TextureHandle& handle, ETextureLayout newLayout) override;
         virtual void AddMemoryBarrier(EAccessFlags srcAccess, EAccessFlags dstAccess, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) override;
         virtual void AddMemoryBarrier(const BufferHandle& buffer, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) override;
-        virtual void BeginRendering(const GraphicsPipelineHandle& handle, bool useDepth = false, bool clearAttachments = false, bool writeDepth = false) override;
+        virtual void BeginRendering(const GraphicsPipelineHandle& handle, ERenderingOp colorOp = ERenderingOp::LOAD, ERenderingOp depthOp = ERenderingOp::LOAD) override;
         virtual void BindPipeline(const GraphicsPipelineHandle& handle) override;
         virtual void BindComputePipeline(const ComputePipelineHandle& handle) override;
         virtual void EndRendering() override;

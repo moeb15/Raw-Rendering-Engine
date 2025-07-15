@@ -136,7 +136,7 @@ namespace Raw::GFX
 		vkCmdPipelineBarrier(vulkanCmdBuffer, srcVkP, dstVkP, 0, 0, nullptr, 1, &bufferBarrier, 0, nullptr);
     }
 
-    void VulkanCommandBuffer::BeginRendering(const GraphicsPipelineHandle& handle, bool useDepth, bool clearAttachments, bool writeDepth)
+    void VulkanCommandBuffer::BeginRendering(const GraphicsPipelineHandle& handle, ERenderingOp colorOp, ERenderingOp depthOp)
     {
         VulkanPipeline* gfxPipeline = VulkanGFXDevice::Get()->GetGraphicsPipeline(handle);
         activeGraphicsPipeline = gfxPipeline;
@@ -164,9 +164,9 @@ namespace Raw::GFX
                 cAttachments[i] = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
                 cAttachments[i].imageView = curTexture->srv;
                 cAttachments[i].imageLayout = curTexture->imageLayout;
-                cAttachments[i].loadOp = clearAttachments ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+                cAttachments[i].loadOp = vkUtils::ToVkRenderingOp(colorOp);
                 cAttachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                if(clearAttachments)
+                if(cAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)
                 {
                     VkClearValue clearValue = {};
                     clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -182,7 +182,7 @@ namespace Raw::GFX
             renderingInfo.pColorAttachments = nullptr;
         }
         
-        if(useDepth)
+        if(gfxPipeline->depthAttachment)
         {
             TextureHandle handle = *gfxPipeline->depthAttachment;
             
@@ -190,7 +190,7 @@ namespace Raw::GFX
             VkRenderingAttachmentInfo depthAttachment = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
             depthAttachment.imageView = depthTexture->srv;
             depthAttachment.imageLayout = depthTexture->imageLayout;
-            depthAttachment.loadOp = writeDepth ?  VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+            depthAttachment.loadOp = vkUtils::ToVkRenderingOp(depthOp);
             depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
             depthAttachment.clearValue.depthStencil.depth = 1.0f;
 
