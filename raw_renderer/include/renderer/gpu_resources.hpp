@@ -380,6 +380,7 @@ namespace Raw::GFX
         bool isRenderTarget{ false };
         bool isStorageImage{ false };
         bool isMipmapped{ false };
+        bool isSampledImage{ true };
     };
 
     struct BufferDesc
@@ -448,12 +449,10 @@ namespace Raw::GFX
     {
         ShaderDesc computeShader;
         DescriptorSetLayoutDesc layoutDesc;
-        TextureHandle* storageImages{ nullptr };
-        u32 numStorageImages{ 0 };
-        BufferHandle* storageBuffers{ nullptr };
-        u32 numStorageBuffers{ 0 };
-        BufferHandle* uniformBuffers{ nullptr };
-        u32 numUBOs{ 0 };
+        PushConstantDesc pushConstant;
+        TextureHandle* imageAttachments{ nullptr };
+        u32 numImageAttachments{ 0 };
+        bool bUseDepthBuffer{ false };
 
         cstring name{ nullptr };
     };
