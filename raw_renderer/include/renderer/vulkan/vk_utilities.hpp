@@ -33,4 +33,5 @@ namespace Raw::GFX::vkUtils
 	VkShaderStageFlagBits ToVkShaderStage(EShaderStage stage);
 	VkPolygonMode ToVkPolygonMode(EFillMode fillMode);
 	VkImageLayout ToVkImageLayout(ETextureLayout layout);
+	VkAttachmentLoadOp ToVkRenderingOp(ERenderingOp op);
 }

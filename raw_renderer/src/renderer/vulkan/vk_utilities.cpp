@@ -447,4 +447,14 @@ namespace Raw::GFX::vkUtils
 			default:													return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 	}
+
+	VkAttachmentLoadOp ToVkRenderingOp(ERenderingOp op)
+	{
+		switch(op)
+		{
+			case ERenderingOp::CLEAR:									return VK_ATTACHMENT_LOAD_OP_CLEAR;
+			case ERenderingOp::LOAD:									return VK_ATTACHMENT_LOAD_OP_LOAD;
+			default:													return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		}
+	}
 }
