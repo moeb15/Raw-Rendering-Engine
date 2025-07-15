@@ -43,6 +43,7 @@ namespace Raw::GFX
         techiqueDesc.numImageAttachments = 1;
         TextureHandle* forwardPassImages = &device->GetDrawImageHandle();
         techiqueDesc.imageAttachments = forwardPassImages;
+        techiqueDesc.depthAttachment = &device->GetDepthBufferHandle();
 
         techiqueDesc.name = "Forward Pass";
 
@@ -58,7 +59,7 @@ namespace Raw::GFX
 
     void ForwardPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
     {
-        cmd->BeginRendering(technique.gfxPipeline, true, true, false);
+        cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::CLEAR, ERenderingOp::LOAD);
         cmd->BindPipeline(technique.gfxPipeline);
 
         for(u32 i = 0; i < scene->meshes.size(); i++)
@@ -97,7 +98,7 @@ namespace Raw::GFX
                 ICommandBuffer* cmd = device->GetCommandBuffer();
                 cmd->BeginCommandBuffer();
 
-                cmd->BeginRendering(technique.gfxPipeline, true, true, false);
+                cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::LOAD, ERenderingOp::CLEAR);
                 cmd->BindPipeline(technique.gfxPipeline);
 
                 for(u32 i = 0; i < scene->meshes.size(); i++)

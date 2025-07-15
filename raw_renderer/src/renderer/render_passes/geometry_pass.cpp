@@ -143,7 +143,7 @@ namespace Raw::GFX
     {
         cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
 
-        cmd->BeginRendering(technique.gfxPipeline, true, true, true);
+        cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::CLEAR, ERenderingOp::CLEAR);
         cmd->BindPipeline(technique.gfxPipeline);
 
         for(u32 i = 0; i < scene->meshes.size(); i++)
@@ -171,7 +171,7 @@ namespace Raw::GFX
 
                 cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
 
-                cmd->BeginRendering(technique.gfxPipeline, true, true, true);
+                cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::CLEAR, ERenderingOp::CLEAR);
                 cmd->BindPipeline(technique.gfxPipeline);
                 for(u32 i = 0; i < scene->meshes.size(); i++)
                 {

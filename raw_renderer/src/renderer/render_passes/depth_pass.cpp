@@ -21,6 +21,7 @@ namespace Raw::GFX
         techiqueDesc.pushConstant.stage = EShaderStage::VERTEX_STAGE;
 
         techiqueDesc.numImageAttachments = 0;
+        techiqueDesc.depthAttachment = &device->GetDepthBufferHandle();
 
         techiqueDesc.name = "Depth Pre-Pass";
 
@@ -30,7 +31,7 @@ namespace Raw::GFX
     void DepthPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
     {
         cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
-        cmd->BeginRendering(technique.gfxPipeline, true, false, true);
+        cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::LOAD, ERenderingOp::CLEAR);
         cmd->BindPipeline(technique.gfxPipeline);
 
         for(u32 i = 0; i < scene->meshes.size(); i++)
@@ -62,7 +63,7 @@ namespace Raw::GFX
             {
                 ICommandBuffer* cmd = device->GetCommandBuffer();
                 cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
-                cmd->BeginRendering(technique.gfxPipeline, true, false, true);
+                cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::LOAD, ERenderingOp::CLEAR);
                 cmd->BindPipeline(technique.gfxPipeline);
 
                 for(u32 i = 0; i < scene->meshes.size(); i++)

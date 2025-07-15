@@ -76,7 +76,7 @@ namespace Raw::GFX
 
     void TransparencyPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
     {
-        cmd->BeginRendering(technique.gfxPipeline, true, true, false);
+        cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::CLEAR, ERenderingOp::LOAD);
         cmd->BindPipeline(technique.gfxPipeline);
 
         for(u32 i = 0; i < scene->meshes.size(); i++)
@@ -101,7 +101,7 @@ namespace Raw::GFX
                 ICommandBuffer* cmd = device->GetCommandBuffer();
                 cmd->BeginCommandBuffer();
 
-                cmd->BeginRendering(technique.gfxPipeline, true, true, false);
+                cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::CLEAR, ERenderingOp::LOAD);
                 cmd->BindPipeline(technique.gfxPipeline);
 
                 for(u32 i = 0; i < scene->meshes.size(); i++)

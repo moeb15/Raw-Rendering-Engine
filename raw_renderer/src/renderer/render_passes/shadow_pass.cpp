@@ -46,7 +46,7 @@ namespace Raw::GFX
     void ShadowPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
     {
         cmd->TransitionImage(shadowMap, ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
-        cmd->BeginRendering(technique.gfxPipeline, true, false, true);
+        cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::LOAD, ERenderingOp::CLEAR);
         cmd->BindPipeline(technique.gfxPipeline);
 
         for(u32 i = 0; i < scene->meshes.size(); i++)
@@ -73,7 +73,7 @@ namespace Raw::GFX
                 ICommandBuffer* cmd = device->GetCommandBuffer();
                 cmd->BeginCommandBuffer();
                 cmd->TransitionImage(shadowMap, ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
-                cmd->BeginRendering(technique.gfxPipeline, true, false, true);
+                cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::LOAD, ERenderingOp::CLEAR);
                 cmd->BindPipeline(technique.gfxPipeline);
 
                 for(u32 i = 0; i < scene->meshes.size(); i++)
