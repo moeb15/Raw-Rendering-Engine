@@ -119,6 +119,7 @@ namespace Raw::GFX
         geometryPassImages[5] = lightClipSpacePosition;
         techiqueDesc.numImageAttachments = ArraySize(geometryPassImages);
         techiqueDesc.imageAttachments = geometryPassImages;
+        techiqueDesc.depthAttachment = &device->GetDepthBufferHandle();
         techiqueDesc.name = "Geometry Pass";
 
         technique.gfxPipeline = device->CreateGraphicsPipeline(techiqueDesc);
@@ -167,6 +168,8 @@ namespace Raw::GFX
             {
                 ICommandBuffer* cmd = device->GetCommandBuffer();
                 cmd->BeginCommandBuffer();
+
+                cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::DEPTH_ATTACHMENT_OPTIMAL);
 
                 cmd->BeginRendering(technique.gfxPipeline, true, true, true);
                 cmd->BindPipeline(technique.gfxPipeline);

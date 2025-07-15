@@ -58,7 +58,8 @@ namespace Raw::GFX
         techiqueDesc.numImageAttachments = 1;
         TextureHandle* tPassImages = &transparencyTex;
         techiqueDesc.imageAttachments = tPassImages;
-
+        techiqueDesc.depthAttachment = &device->GetDepthBufferHandle();
+        
         techiqueDesc.name = "Transparency Pass";
 
         technique.gfxPipeline = device->CreateGraphicsPipeline(techiqueDesc);
