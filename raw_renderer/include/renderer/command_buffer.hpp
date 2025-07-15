@@ -25,6 +25,7 @@ namespace Raw::GFX
         virtual void AddMemoryBarrier(const BufferHandle& buffer, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) = 0;
         virtual void BeginRendering(const GraphicsPipelineHandle& handle, bool useDepth = false, bool clearAttachments = false, bool writeDepth = false) = 0;
         virtual void BindPipeline(const GraphicsPipelineHandle& handle) = 0;
+        virtual void BindComputePipeline(const ComputePipelineHandle& handle) = 0;
         virtual void EndRendering() = 0;
         virtual void Draw(u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance) = 0;
         virtual void DrawIndexed(u32 indexCount, u32 instanceCount, u32 firstIndex, i32 vertexOffset, u32 firstInstance) = 0;
@@ -32,6 +33,7 @@ namespace Raw::GFX
         virtual void BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform = glm::mat4(1.f), u32 materialIndex = U32_MAX) = 0;
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) = 0;
         virtual void BindFullScreenData(const FullScreenData& data) = 0;
+        virtual void BindAOData(const AOData& data) = 0;
         
         ECommandBufferState GetState() const { return m_State->load(); }
         EQueueType GetQueueType() const { return m_QueueType; }

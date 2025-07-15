@@ -27,6 +27,7 @@ namespace Raw::GFX
         virtual void AddMemoryBarrier(const BufferHandle& buffer, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) override;
         virtual void BeginRendering(const GraphicsPipelineHandle& handle, bool useDepth = false, bool clearAttachments = false, bool writeDepth = false) override;
         virtual void BindPipeline(const GraphicsPipelineHandle& handle) override;
+        virtual void BindComputePipeline(const ComputePipelineHandle& handle) override;
         virtual void EndRendering() override;
         virtual void Draw(u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance) override;
         virtual void DrawIndexed(u32 indexCount, u32 instanceCount, u32 firstIndex, i32 vertexOffset, u32 firstInstance) override;
@@ -34,9 +35,12 @@ namespace Raw::GFX
         virtual void BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform = glm::mat4(1.f), u32 materialIndex = U32_MAX) override;
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) override;
         virtual void BindFullScreenData(const FullScreenData& data) override;
+        virtual void BindAOData(const AOData& data) override;
+
         
         VkCommandBuffer vulkanCmdBuffer{ VK_NULL_HANDLE };
         VulkanPipeline* activeGraphicsPipeline{ nullptr };
+        VulkanPipeline* activeComputePipeline{ nullptr };
         VkRenderingInfo curRenderingInfo{};
         
     }; 

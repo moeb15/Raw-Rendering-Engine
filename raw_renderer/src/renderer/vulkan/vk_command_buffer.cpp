@@ -98,15 +98,9 @@ namespace Raw::GFX
 
     void VulkanCommandBuffer::Dispatch(const ComputePipelineHandle& handle, u32 groupX, u32 groupY, u32 groupZ)
     {
-        VulkanPipeline* computePipeline = VulkanGFXDevice::Get()->GetComputePipeline(handle);
-
-        VulkanGFXDevice::Get()->PushMarker(vulkanCmdBuffer, computePipeline->pipelineName);
-
-        vkCmdBindPipeline(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipeline);
-        vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipelineLayout, 0, 1, &computePipeline->set, 0, nullptr);
         vkCmdDispatch(vulkanCmdBuffer, groupX, groupY, groupZ);
-
         VulkanGFXDevice::Get()->PopMarker(vulkanCmdBuffer);
+        activeComputePipeline = nullptr;
     }
 
     void VulkanCommandBuffer::TransitionImage(const TextureHandle& handle, ETextureLayout newLayout)
@@ -190,9 +184,7 @@ namespace Raw::GFX
         
         if(useDepth)
         {
-            TextureHandle handle = { INVALID_RESOURCE_HANDLE };
-            if(!gfxPipeline->depthAttachment) handle = VulkanGFXDevice::Get()->GetDepthBufferHandle();
-            if(gfxPipeline->depthAttachment) handle = *gfxPipeline->depthAttachment;
+            TextureHandle handle = *gfxPipeline->depthAttachment;
             
             VulkanTexture* depthTexture = VulkanGFXDevice::Get()->GetTexture(handle);
             VkRenderingAttachmentInfo depthAttachment = { VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
@@ -265,6 +257,24 @@ namespace Raw::GFX
         vkCmdSetScissor(vulkanCmdBuffer, 0, 1, &scissor);
     }
 
+    void VulkanCommandBuffer::BindComputePipeline(const ComputePipelineHandle& handle)
+    {
+        VulkanPipeline* computePipeline = VulkanGFXDevice::Get()->GetComputePipeline(handle);
+        activeComputePipeline = computePipeline;
+
+        VulkanGFXDevice::Get()->PushMarker(vulkanCmdBuffer, computePipeline->pipelineName);
+
+        u32 curFrame = VulkanGFXDevice::Get()->m_CurFrame;
+        VkDescriptorSet sceneDataSet = VulkanGFXDevice::Get()->m_SceneDataSet[curFrame];
+        VkDescriptorSet bindlessSet = VulkanGFXDevice::Get()->m_BindlessSet;
+        VkDescriptorSet materialDataSet = VulkanGFXDevice::Get()->m_MaterialDataSet[curFrame];
+        VkDescriptorSet sets[3] = { sceneDataSet, bindlessSet, materialDataSet };
+
+        vkCmdBindPipeline(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipeline);
+        //vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipelineLayout, 0, 1, &computePipeline->set[VulkanGFXDevice::Get()->m_CurFrame], 0, nullptr);
+        vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline->pipelineLayout, 0, ArraySize(sets), sets, 0, nullptr);
+    }
+
     void VulkanCommandBuffer::EndRendering()
     {
         vkCmdEndRendering(vulkanCmdBuffer);
@@ -321,6 +331,7 @@ namespace Raw::GFX
             u32 emissive;
             u32 viewspace;
             u32 lightClipSpacePos;
+            u32 occlusion;
             u32 transparent;
         } pushConstant;
 
@@ -332,9 +343,26 @@ namespace Raw::GFX
         pushConstant.emissive = data.emissive;
         pushConstant.viewspace = data.viewspace;
         pushConstant.lightClipSpacePos = data.lightClipSpacePos;
+        pushConstant.occlusion = data.occlusion;
         pushConstant.transparent = data.transparent;
 
         vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, pcSize, &pushConstant);
+    }
+
+    void VulkanCommandBuffer::BindAOData(const AOData& data)
+    {
+        struct
+        {
+            u32 depth;
+            u32 outputAOTexture;
+        } pushConstant;
+
+        u32 pcSize = sizeof(pushConstant);
+
+        pushConstant.depth = data.depthBuffer;
+        pushConstant.outputAOTexture = data.outputAOTexture;
+
+        vkCmdPushConstants(vulkanCmdBuffer, activeComputePipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pcSize, &pushConstant);
     }
 
     void VulkanCommandBuffer::DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount)
