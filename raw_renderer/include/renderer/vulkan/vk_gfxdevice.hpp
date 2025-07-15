@@ -122,6 +122,8 @@ namespace Raw::GFX
         virtual void DestroyGraphicsPipelineInstant(GraphicsPipelineHandle& handle) override;
 
         virtual void UpdateGraphicsPipelineImageAttachments(const GraphicsPipelineHandle& handle, u32 numImageAttachments, TextureHandle* attachments) override;
+        // temporary
+        virtual void UpdateComputePipelineDescriptorSet(const ComputePipelineHandle& handle, u32 numImages, TextureHandle* textures) override;
         virtual void UpdateGraphicsPipelineDepthAttachment(const GraphicsPipelineHandle& handle, TextureHandle* textureHandle) override;
         
         void SetResourceName(VkObjectType type, u64 vulkanHandle, cstring name);

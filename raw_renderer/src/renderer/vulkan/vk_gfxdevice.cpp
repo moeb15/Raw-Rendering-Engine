@@ -485,7 +485,7 @@ namespace Raw::GFX
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VULKAN_MAX_BINDLESS_RESOURCES },
             { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VULKAN_MAX_BINDLESS_RESOURCES },
             { VK_DESCRIPTOR_TYPE_SAMPLER, VULKAN_DEFAULT_RESOURCE_AMOUNT },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VULKAN_DEFAULT_RESOURCE_AMOUNT },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VULKAN_MAX_BINDLESS_RESOURCES },
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VULKAN_DEFAULT_RESOURCE_AMOUNT },
             { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VULKAN_DEFAULT_RESOURCE_AMOUNT },
         };
@@ -524,7 +524,7 @@ namespace Raw::GFX
 
         VkDescriptorSetLayoutBinding& storageImageBinding = bindlessBindings[3];
         storageImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        storageImageBinding.descriptorCount = VULKAN_DEFAULT_RESOURCE_AMOUNT;
+        storageImageBinding.descriptorCount = VULKAN_MAX_BINDLESS_RESOURCES;
         storageImageBinding.binding = VULKAN_STORAGE_IMAGE_BINDING;
         storageImageBinding.stageFlags = VK_SHADER_STAGE_ALL;
         storageImageBinding.pImmutableSamplers = nullptr;
@@ -554,7 +554,7 @@ namespace Raw::GFX
         bindingFlags[0] = bindlessFlags;
         bindingFlags[1] = bindlessFlags;
         bindingFlags[2] = bindlessFlags;
-        bindingFlags[3] = 0;
+        bindingFlags[3] = bindlessFlags;
         bindingFlags[4] = 0;
         bindingFlags[5] = 0;
 
@@ -1341,16 +1341,20 @@ namespace Raw::GFX
         vkText->isStorageImage = desc.isStorageImage;
         vkText->isDepthTexture = isDepth;
 
-        if(!isDepth)
+        if(desc.isSampledImage)
         {
             VkSampler* sampler = GetSampler(m_LinearSampler);
             frameManager.bindlessSetUpdates[m_CurFrame].WriteImage(0, vkText->srv, *sampler, 
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, handle.id);
         }
-        if(isDepth)
+        else
         {
             frameManager.bindlessSetUpdates[m_CurFrame].WriteImage(1, vkText->srv, VK_NULL_HANDLE, 
-                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, handle.id);
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, handle.id);
+        }
+        if(desc.isStorageImage)
+        {
+            frameManager.bindlessSetUpdates[m_CurFrame].WriteImage(3, vkText->srv, VK_NULL_HANDLE,  VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, handle.id);
         }
 
         return handle;
@@ -1540,89 +1544,27 @@ namespace Raw::GFX
         *cPipeline = {};
 
         cPipeline->pipelineName = desc.name;
+        if(desc.bUseDepthBuffer) cPipeline->depthAttachment = &depthBuffer;
         VkShaderModule computeShader{ VK_NULL_HANDLE };
         ShaderDesc sDesc = desc.computeShader;
         LoadShader(sDesc, computeShader);
-
-        RAW_ASSERT_MSG(desc.layoutDesc.numBindings <= 1, "ComputePipeline %s must have atmost 1 binding, %u bindings present!", desc.name, desc.layoutDesc.numBindings);
-
-
-        if(desc.layoutDesc.numBindings > 0)
-        {
-            VulkanDescriptorLayoutBuilder layoutBuilder;
-            layoutBuilder.Init();
-    
-            std::vector<u32> storageImageBindings;
-            std::vector<u32> storageBufferBindings;
-            std::vector<u32> uboBindings;
-
-            if(desc.numStorageImages > 0)   storageImageBindings.resize(desc.numStorageImages);
-            if(desc.numStorageBuffers > 0)  storageBufferBindings.resize(desc.numStorageBuffers);
-            if(desc.numUBOs > 0)            uboBindings.resize(desc.numUBOs);
-    
-            u32 storageImageIndex = 0;
-            u32 storageBufferIndex = 0;
-            u32 uboIndex = 0;
-            for(u32 i = 0; i < desc.layoutDesc.numBindings; i++)
-            {
-                Binding binding = desc.layoutDesc.bindings[i];
-                VkDescriptorType type = vkUtils::ToVkDescriptorType(binding.type);
-                layoutBuilder.AddBinding(binding.bind, binding.count, type, VK_SHADER_STAGE_COMPUTE_BIT);
-                
-                if(type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)    storageImageBindings[storageImageIndex] = binding.bind; storageImageIndex++;
-                if(type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)   storageBufferBindings[storageBufferIndex] = binding.bind; storageBufferIndex++;
-                if(type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)   uboBindings[uboIndex] = binding.bind; uboIndex++;
-            }
-    
-            cPipeline->dsLayout = layoutBuilder.Build();
-            layoutBuilder.Shutdown();
-    
-            VulkanDescriptorWriter writer;
-            writer.Init();
-            if(storageImageBindings.size() > 0)
-            {
-                for(u32 i = 0; i < desc.numStorageImages; i++)
-                {
-                    TextureHandle texHandle = desc.storageImages[i];
-                    VulkanTexture* texVk = GetTexture(texHandle);
-                    writer.WriteImage(storageImageBindings[i], texVk->srv, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-                }
-            }
-
-            if(storageBufferBindings.size() > 0)
-            {
-                for(u32 i = 0; i < desc.numStorageImages; i++)
-                {
-                    BufferHandle bufferHandle = desc.storageBuffers[i];
-                    VulkanBuffer* bufferVk = GetBuffer(bufferHandle);
-                    writer.WriteBuffer(storageBufferBindings[i], bufferVk->buffer, bufferVk->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-                }
-            }
-            
-            if(uboBindings.size() > 0)
-            {
-                for(u32 i = 0; i < desc.numUBOs; i++)
-                {
-                    BufferHandle bufferHandle = desc.uniformBuffers[i];
-                    VulkanBuffer* bufferVk = GetBuffer(bufferHandle);
-                    writer.WriteBuffer(uboBindings[i], bufferVk->buffer, bufferVk->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-                }
-            }
-
-
-            VkDescriptorSetAllocateInfo setAlloc = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-            setAlloc.descriptorPool = m_DefaultPool;
-            setAlloc.descriptorSetCount = 1;
-            setAlloc.pSetLayouts = &cPipeline->dsLayout;
-            VK_CHECK(vkAllocateDescriptorSets(m_LogicalDevice, &setAlloc, &cPipeline->set));
-
-            writer.UpdateSet(cPipeline->set);
-            writer.Shutdown();
-        }
-
+        
+        // use bindless descriptor set layout, scene data layout, and material data layout for all compute pipelines
+        std::vector<VkDescriptorSetLayout> layouts = { m_SceneLayout, m_BindlessLayout, m_MaterialDataLayout };
         VkPipelineLayoutCreateInfo pInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        pInfo.pSetLayouts = &cPipeline->dsLayout;
-        pInfo.setLayoutCount = 1;
+        // push constants
+        VkPushConstantRange pc = {};
+        if(desc.pushConstant.size > 0)
+        {
+            pc.offset = desc.pushConstant.offset;
+            pc.size = desc.pushConstant.size;
+            pc.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+            pInfo.pPushConstantRanges = &pc;
+            pInfo.pushConstantRangeCount = 1;
+        }
+        pInfo.pSetLayouts = layouts.data();
+        pInfo.setLayoutCount = (u32)layouts.size();
         VK_CHECK(vkCreatePipelineLayout(m_LogicalDevice, &pInfo, m_AllocCallbacks, &cPipeline->pipelineLayout));
 
         VkPipelineShaderStageCreateInfo stageInfo = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
@@ -2062,6 +2004,14 @@ namespace Raw::GFX
         VulkanPipeline* pipeline = GetGraphicsPipeline(handle);
         pipeline->numImageAttachments = numImageAttachments;
         pipeline->imageAttachements = attachments;
+    }
+
+    void VulkanGFXDevice::UpdateComputePipelineDescriptorSet(const ComputePipelineHandle& handle, u32 numImages, TextureHandle* textures)
+    {
+        // temporary implementation, does not generalize
+        VulkanPipeline* pipeline = GetComputePipeline(handle);
+        pipeline->numImageAttachments = numImages;
+        pipeline->imageAttachements = textures;
     }
 
     void VulkanGFXDevice::UpdateGraphicsPipelineDepthAttachment(const GraphicsPipelineHandle& handle, TextureHandle* textureHandle)
