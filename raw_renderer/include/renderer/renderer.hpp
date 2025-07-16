@@ -19,6 +19,7 @@ namespace Raw::GFX
     class FullScreenPass;
     class ShadowPass;
     class SSAOPass;
+    class SSRPass;
 
     class Renderer
     {
@@ -35,6 +36,7 @@ namespace Raw::GFX
         FullScreenPass* m_FullScreenPass;
         ShadowPass* m_ShadowPass;
         SSAOPass* m_SSAOPass;
+        SSRPass* m_SSRPass;
 
         BufferHandle m_SceneDataBuffer;
     };

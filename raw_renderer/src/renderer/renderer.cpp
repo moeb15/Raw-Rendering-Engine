@@ -14,6 +14,7 @@
 #include "renderer/render_passes/fullscreen_pass.hpp"
 #include "renderer/render_passes/shadow_pass.hpp"
 #include "renderer/render_passes/ssao_pass.hpp"
+#include "renderer/render_passes/ssr_pass.hpp"
 
 namespace Raw::GFX
 {
@@ -32,6 +33,9 @@ namespace Raw::GFX
 
         m_SSAOPass = new SSAOPass();
         m_SSAOPass->Init(device);
+
+        m_SSRPass = new SSRPass();
+        m_SSRPass->Init(device);
 
         m_FullScreenPass = new FullScreenPass();
         m_FullScreenPass->Init(device);
@@ -71,7 +75,9 @@ namespace Raw::GFX
         TextureResource* tex = (TextureResource*)TextureLoader::Instance()->Get(DIR_SHADOW_MAP);
 
         sceneData.view = camera.GetViewMatrix();
+        sceneData.viewInv = glm::inverse(sceneData.view);
         sceneData.projection = camera.GetProjectionMatrix();
+        sceneData.projInv = glm::inverse(sceneData.projection);
         sceneData.viewProj = sceneData.projection * sceneData.view;
         if(tex) sceneData.shadowMapIndex = tex->handle.id;
 
@@ -96,6 +102,7 @@ namespace Raw::GFX
         m_TransparencyPass->Execute(device, cmd, scene->GetSceneData());
         m_ShadowPass->Execute(device, cmd, scene->GetSceneData());
         m_SSAOPass->Execute(device, cmd, nullptr);
+        m_SSRPass->Execute(device, cmd, nullptr);
         m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
 
         device->EndFrame();
