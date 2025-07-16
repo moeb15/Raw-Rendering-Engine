@@ -333,6 +333,7 @@ namespace Raw::GFX
             u32 lightClipSpacePos;
             u32 occlusion;
             u32 transparent;
+            u32 reflection;
         } pushConstant;
 
         u32 pcSize = sizeof(pushConstant);
@@ -345,6 +346,7 @@ namespace Raw::GFX
         pushConstant.lightClipSpacePos = data.lightClipSpacePos;
         pushConstant.occlusion = data.occlusion;
         pushConstant.transparent = data.transparent;
+        pushConstant.reflection = data.reflection;
 
         vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, pcSize, &pushConstant);
     }
@@ -355,12 +357,18 @@ namespace Raw::GFX
         {
             u32 depth;
             u32 outputAOTexture;
+            u32 normal;
+            u32 diffuse;
+            u32 metallicRoughness;
         } pushConstant;
 
         u32 pcSize = sizeof(pushConstant);
 
         pushConstant.depth = data.depthBuffer;
         pushConstant.outputAOTexture = data.outputAOTexture;
+        pushConstant.normal = data.normalBuffer;
+        pushConstant.diffuse = data.diffuse;
+        pushConstant.metallicRoughness = data.metallicRoughness;
 
         vkCmdPushConstants(vulkanCmdBuffer, activeComputePipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pcSize, &pushConstant);
     }
