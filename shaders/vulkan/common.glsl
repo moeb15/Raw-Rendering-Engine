@@ -5,8 +5,10 @@
 #define BIAS 0.0005
 
 layout (set = 0, binding = 0) uniform sceneData{
-	mat4 view;	
-	mat4 proj;	
+	mat4 view;
+    mat4 viewInv;	
+	mat4 proj;
+    mat4 projInv;	
 	mat4 viewProj;
 	mat4 lightView;
 	mat4 lightProj;
