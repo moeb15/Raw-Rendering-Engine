@@ -21,17 +21,10 @@ layout(push_constant) uniform constants{
     uint emissive;
     uint viewspace;
     uint lightClipSpacePos;
+    uint occlusion;
     uint transparent;
+    uint reflection;
 } PushConstants;
-
-#define PI 3.1415926538
-#define AMBIENT 0.5
-#define BIAS 0.0005
-
-float heaviside( float v ) {
-    if ( v > 0.0 ) return 1.0;
-    else return 0.0;
-}
 
 float textureProj(vec3 projCoords, vec2 off)
 {
@@ -72,51 +65,16 @@ float filterPCF(vec4 shadowPos)
 	return shadowFactor / count;
 }
 
-float distGGX(vec3 N, vec3 H, float roughness)
-{
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
-
-    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom = PI * denom * denom;
-
-    return (a2 * heaviside(NdotH)) / max(denom, 0.0001);
-}
-
-float geomSchlickGGX(float NdotV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-    float denom = NdotV * (1.0 - k) + k;
-    
-    return NdotV / denom;
-}
-
-float geomSmith(vec3 N, vec3 V, vec3 L, float roughness)
-{
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float ggx1 = geomSchlickGGX(NdotV, roughness);
-    float ggx2 = geomSchlickGGX(NdotL, roughness);
-
-    return ggx1 * ggx2;
-}
-
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
-{
-    return F0 + (1.0 - F0) *pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
-}
-
 void main() 
 {
     vec4 baseColor = texture(globalTextures[nonuniformEXT(PushConstants.diffuse)], inUV);
+    vec4 reflectColor = texture(globalTextures[nonuniformEXT(PushConstants.reflection)], inUV);
     vec3 normal = texture(globalTextures[nonuniformEXT(PushConstants.normal)], inUV).rgb;
 	vec4 rmOcc = texture(globalTextures[nonuniformEXT(PushConstants.roughness)], inUV);
 	vec4 emissive = texture(globalTextures[nonuniformEXT(PushConstants.emissive)], inUV);
     vec4 viewPos = texture(globalTextures[nonuniformEXT(PushConstants.viewspace)], inUV);
     vec4 transparency = texture(globalTextures[nonuniformEXT(PushConstants.transparent)], inUV);
+    vec4 occlusionTex = texture(globalTextures[nonuniformEXT(PushConstants.occlusion)], inUV);
 
     mat3 rot = mat3(GlobalSceneData.view);
     vec3 translation = vec3(GlobalSceneData.view[3]);
@@ -129,14 +87,14 @@ void main()
 
 	float roughness = rmOcc.r;
     float metalness = rmOcc.g;
-	float occlusion = rmOcc.b;
+	float occlusion = occlusionTex.r;
 	float alpha = pow(roughness, 2.0);
 
     vec3 F0 = mix(vec3(0.04), baseColor.rgb, metalness);
     vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    float NDF = distGGX(N, H, metalness);
-    float G = geomSmith(N, V, L, metalness);
+    float NDF = distGGX(N, H, roughness);
+    float G = geomSmith(N, V, L, roughness);
     
     vec3 numerator = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
@@ -148,11 +106,21 @@ void main()
     vec3 radiance = vec3(1.0) * GlobalSceneData.lightIntensity;
 
     vec4 lightClipSpacePos = texture(globalTextures[nonuniformEXT(PushConstants.lightClipSpacePos)], inUV);
-    float shadow = filterPCF(lightClipSpacePos);
+//    ivec2 shadowDim = textureSize(sampler2D(globalImages[GlobalSceneData.shadowMapIndex], shadowSampler), 0);
+//    ivec2 backBufferDim = textureSize(globalTextures[nonuniformEXT(PushConstants.diffuse)], 0);
 
-    vec3 Lo = (diffuse + specular) * radiance * NdotL;
+    //vec4 shadowUV;
+    // shadowUV.xy = lightClipSpacePos.xy * (shadowDim / backBufferDim);
+    // shadowUV.z = lightClipSpacePos.z;
+    // shadowUV.w = lightClipSpacePos.w;
+
+    float shadow = filterPCF(lightClipSpacePos);    
+    vec3 relfectedLight = mix(specular * radiance, reflectColor.rgb, reflectColor.a);
+    relfectedLight *= occlusion;
+
+    vec3 Lo = (diffuse + relfectedLight) * radiance * NdotL;
     vec3 ambient = baseColor.rgb * AMBIENT * occlusion;
-    vec3 color = emissive.rgb + ambient + Lo * (1.0 - shadow);
+    vec3 color = emissive.rgb + ambient + Lo;
 
     if(transparency.a > 0.0 && length(transparency.rgb) > 0.001)
     {

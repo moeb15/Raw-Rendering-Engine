@@ -52,8 +52,8 @@ void main()
 		vec4 occ = texture(globalTextures[nonuniformEXT(material.occlusion)], inUV);
 		vec4 emissive = texture(globalTextures[nonuniformEXT(material.emissive)], inUV);
 
-        float metalness = rm.g * material.metalRoughnessFactor.x;
-        float roughness = rm.b * material.metalRoughnessFactor.y;
+        float metalness = rm.b * material.metalRoughnessFactor.x;
+        float roughness = rm.g * material.metalRoughnessFactor.y;
         float alpha = pow(roughness, 2.0);
         float occlusion = occ.r;
 

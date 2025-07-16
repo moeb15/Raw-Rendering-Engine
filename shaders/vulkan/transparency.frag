@@ -27,15 +27,6 @@ layout (location = 6) in flat uint inMaterialIndex;
 //output write
 layout (location = 0) out vec4 outFragColor;
 
-#define PI 3.1415926538
-#define AMBIENT 0.1
-#define BIAS 0.0005
-
-float heaviside( float v ) {
-    if ( v > 0.0 ) return 1.0;
-    else return 0.0;
-}
-
 float textureProj(vec3 projCoords, vec2 off)
 {
 	float closestDepth = texture(sampler2D(globalImages[GlobalSceneData.shadowMapIndex], shadowSampler), projCoords.xy + off).r;
@@ -108,8 +99,8 @@ void main()
 		vec3 N = normal;
 		vec3 H = normalize(L + V);
 
-		float metalness = rm.g * material.metalRoughnessFactor.x;
-		float roughness = rm.b * material.metalRoughnessFactor.y;
+		float metalness = rm.b * material.metalRoughnessFactor.x;
+		float roughness = rm.g * material.metalRoughnessFactor.y;
 		float alpha = pow(roughness, 2.0);
 		float occlusion = occ.r;
 
