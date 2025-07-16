@@ -1,0 +1,107 @@
+#version 460
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_GOOGLE_include_directive : require
+
+#include "common.glsl"
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(set = 1, binding = 0) uniform sampler2D globalTextures[];
+layout(rgba16f, set = 1, binding = 3) uniform image2D globalImages[];
+
+layout(push_constant) uniform constants{
+    uint depthIndex;
+    uint outputTexutureIndex;
+    uint normalIndex;
+    uint diffuseIndex;
+    uint metallicRoughnessIndex;
+} PushConstants;
+
+vec3 generatePositionFromDepth(vec2 texPos, float depth)
+{
+    texPos.y = 1.0 - texPos.y;
+    const vec4 ndc = vec4((texPos * 2.0) - 1.0, depth, 1.0);
+    vec4 worldPos = GlobalSceneData.projInv * ndc;
+    worldPos /= worldPos.w;
+    return worldPos.xyz;
+}
+
+vec2 generateProjectedPosition(vec3 worldPos)
+{
+    const vec4 clipSpacePos = GlobalSceneData.proj * vec4(worldPos, 1.0);
+    const vec2 ndc = clipSpacePos.xy / clipSpacePos.w;
+    vec2 pt = (ndc + 1.0) * 0.5;
+    pt.y = 1 - pt.y;
+    return pt;
+}
+
+void main()
+{
+    ivec2 textureRes = textureSize(globalTextures[nonuniformEXT(PushConstants.diffuseIndex)], 0).xy;
+
+    if(gl_GlobalInvocationID.x >= textureRes.x || gl_GlobalInvocationID.y >= textureRes.y)
+    {
+        return;
+    }
+
+    imageStore(globalImages[nonuniformEXT(PushConstants.outputTexutureIndex)], ivec2(gl_GlobalInvocationID.xy), vec4(0));
+
+    vec2 uv = (vec2(gl_GlobalInvocationID.xy) + vec2(0.5f)) / textureRes;
+    ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
+
+    vec4 normalData = texelFetch(globalTextures[nonuniformEXT(PushConstants.normalIndex)], pixelPos, 0);
+    vec4 metallicRoughnessData = texelFetch(globalTextures[nonuniformEXT(PushConstants.metallicRoughnessIndex)], pixelPos, 0);
+    vec3 baseColor = texture(globalTextures[nonuniformEXT(PushConstants.diffuseIndex)], uv).xyz;
+
+    float roughness = metallicRoughnessData.r;
+    float metallic = metallicRoughnessData.g;
+
+    if(metallic < 0.01)
+    {
+        imageStore(globalImages[nonuniformEXT(PushConstants.outputTexutureIndex)],  ivec2(gl_GlobalInvocationID.xy), vec4(baseColor, 1.0));
+        return;
+    }
+
+    float z = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos, 0).r;
+    vec3 pos = generatePositionFromDepth(uv, z);
+    vec3 normal = normalize(normalData.xyz);
+
+    vec3 cameraPos = GlobalSceneData.view[3].xyz;
+
+    vec3 viewDir = normalize(pos - cameraPos);
+    vec3 reflectionDir = reflect(viewDir, normal);
+
+    float stepSize = 0.05;
+    vec3 curPos = pos;
+
+    for(int i = 0; i < 50; i++)
+    {
+        curPos += reflectionDir * stepSize;
+        vec2 screenPos = generateProjectedPosition(curPos);
+
+        if(screenPos.x < 0.0 || screenPos.x > 1.0 || screenPos.y < 0.0 || screenPos.y > 1.0)
+        {
+            break;
+        }
+
+        float depthAtCur = texture(globalTextures[nonuniformEXT(PushConstants.depthIndex)], screenPos).r;
+        vec3 posFromDepth = generatePositionFromDepth(screenPos, depthAtCur);
+        float depthDiff = length(curPos - posFromDepth);
+
+        if(depthDiff < 0.05)
+        {
+            vec3 hitColor = texture(globalTextures[nonuniformEXT(PushConstants.diffuseIndex)], screenPos).xyz;
+            if(hitColor.x <= 0.1 && hitColor.y <= 0.1 && hitColor.z <= 0.1 && hitColor.x >= 0.08 && hitColor.y >= 0.08 && hitColor.z >= 0.08)
+            {
+                hitColor = baseColor;
+            }
+
+            vec3 blendColor = hitColor * (1.0 - roughness) + roughness * baseColor;
+
+            imageStore(globalImages[nonuniformEXT(PushConstants.outputTexutureIndex)],  ivec2(gl_GlobalInvocationID.xy), vec4(blendColor, 1.0));
+            return;
+        } 
+    }
+
+    imageStore(globalImages[nonuniformEXT(PushConstants.outputTexutureIndex)],  ivec2(gl_GlobalInvocationID.xy), vec4(baseColor, 1.0));
+}
