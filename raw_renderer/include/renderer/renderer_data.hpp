@@ -10,20 +10,22 @@ namespace Raw::GFX
 {
     #define SHADOW_MAP_SIZE 2048
     #define AMBIENT_OCCLUSION_TEX "aoTexture"
+    #define REFLECTION_TEX "refTexture"
 
     // must be 256 byte aligned
     struct GlobalSceneData
     {
-        alignas(16) glm::mat4 view{ 1.f };
-        alignas(16) glm::mat4 projection{ 1.f };
-        alignas(16) glm::mat4 viewProj{ 1.f };
-        alignas(16) glm::mat4 lightView{ glm::lookAt(glm::vec3(-0.5f, -1.0f, 0.0f), glm::vec3(0), glm::vec3(0, 0, 1)) };
-        alignas(16) glm::mat4 lightProj{ glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 20.f) };
-        alignas(16) glm::vec4 lightDir{ -0.5f, -1.f, 0.f, 0.f };
+        glm::mat4 view{ 1.f };
+        glm::mat4 viewInv{ 1.f };
+        glm::mat4 projection{ 1.f };
+        glm::mat4 projInv{ 1.f };
+        glm::mat4 viewProj{ 1.f };
+        glm::mat4 lightView{ glm::lookAt(glm::vec3(-0.5f, -1.0f, 0.0f), glm::vec3(0), glm::vec3(0, 0, 1)) };
+        glm::mat4 lightProj{ glm::ortho(-20.f, 20.f, -20.f, 20.f, 0.1f, 20.f) };
+        glm::vec4 lightDir{ -0.5f, -1.f, 0.f, 0.f };
         f32 lightIntensity{ 1.f };
         u32 shadowMapIndex{ U32_MAX };
         f32 padding0[2];
-        glm::mat4 padding1[2];
         glm::vec4 padding2[2];
     };
 
@@ -67,12 +69,16 @@ namespace Raw::GFX
         i32 lightClipSpacePos{ -1 };
         i32 occlusion{ -1 };
         i32 transparent{ -1 };
+        i32 reflection{ -1 };
     };
 
     struct AOData
     {
         i32 depthBuffer{ -1 };
         i32 outputAOTexture{ -1 };
+        i32 normalBuffer{ -1 };
+        i32 diffuse{ -1 };
+        i32 metallicRoughness{ -1 };
     };
 
     struct MeshData
