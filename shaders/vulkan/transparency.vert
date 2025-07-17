@@ -17,9 +17,9 @@ layout(buffer_reference, std430) readonly buffer VertexBuffer{
 };
 
 layout(push_constant) uniform constants{
-	mat4 transform;
-	uint materialIndex;
 	VertexBuffer vertexBuffer;
+	uint materialIndex;
+	mat4 transform;
 } PushConstants;
 
 void main() 
