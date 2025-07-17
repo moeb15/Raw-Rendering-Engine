@@ -1,4 +1,5 @@
 #include "renderer/render_passes/ssao_pass.hpp"
+#include "renderer/render_passes/geometry_pass.hpp"
 #include "core/servicelocator.hpp"
 #include "resources/buffer_loader.hpp"
 #include "resources/texture_loader.hpp"
@@ -47,6 +48,7 @@ namespace Raw::GFX
         
         data.outputAOTexture = occlusionTex.id;
         data.depthBuffer = device->GetDepthBufferHandle().id;
+        data.normalBuffer = ((TextureResource*)TextureLoader::Instance()->Get(GBUFFER_NORMAL))->handle.id;
     }
 
     void SSAOPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
@@ -102,6 +104,7 @@ namespace Raw::GFX
 
         data.outputAOTexture = occlusionTex.id;
         data.depthBuffer = device->GetDepthBufferHandle().id;
+        data.normalBuffer = ((TextureResource*)TextureLoader::Instance()->Get(GBUFFER_NORMAL))->handle.id;
 
         return false;
     }

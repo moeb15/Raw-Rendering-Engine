@@ -4,15 +4,22 @@
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(set = 1, binding = 0) uniform sampler2D globalTextures[];
-layout(rgba8, set = 1, binding = 3) uniform image2D globalImages[];
+layout(rgba16f, set = 1, binding = 3) uniform image2D globalImages[];
 
 layout(push_constant) uniform constants{
     uint depthIndex;
     uint outputSSAOIndex;
+    uint normalIndex;
 } PushConstants;
 
 const float nearDist = 0.1f;
 const float farDist = 100.0f;
+
+vec3 getWorldNormal(ivec2 pixelPos)
+{
+    vec3 normal = texelFetch(globalTextures[nonuniformEXT(PushConstants.normalIndex)], pixelPos, 0).xyz;
+    return normalize(normal * 2.0 - 1.0);
+}
 
 vec2 generateRandomNoise(in vec2 coord)
 {
@@ -24,38 +31,33 @@ vec2 generateRandomNoise(in vec2 coord)
 
 float calculateLinearDepth(float depth)
 {
-    return (2.0 * nearDist) / (farDist + nearDist - depth * (farDist - nearDist));
+    return (nearDist * farDist) / (farDist - depth * (farDist - nearDist));
 }
 
-float compareDepths(float d1, float d2)
+float compareDepths(float centerDepth, float sampleDepth, vec3 normal, vec3 sampleDir)
 {
-    const float aoCap = 0.5;
-    const float aoMultiplier = 50.0;
-    const float depthTolerance = 0.001;
-    const float aoRange = 60.0;
-    float depthDiff = sqrt(clamp(1.0 - (d1 - d2) / (aoRange / (farDist - nearDist)), 0.0, 1.0));
-    float ao = min(aoCap, max(0.0, d1 - d2 - depthTolerance) * aoMultiplier) * depthDiff;
+    const float bias = 0.01;
+    float depthDiff = centerDepth - sampleDepth;
+    if(dot(sampleDir, normal) < 0.0 || depthDiff < -bias)
+    {
+        return 0.0;
+    }
 
-    return ao;
+    float ao = clamp(depthDiff * 20.0, 0.0, 1.0);
+    return ao * dot(sampleDir, normal);
 }
 
-void main()
+float calculateAO(ivec2 pixelPos, float centerDepth)
 {
     ivec2 size = imageSize(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)]);
     vec2 sizeF = vec2(size);
 
     if(gl_GlobalInvocationID.x >= size.x || gl_GlobalInvocationID.y >= size.y)
     {
-        return;
+        return 0.0;
     }
 
-    imageStore(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)], ivec2(gl_GlobalInvocationID.xy), vec4(0));
-    
-    vec2 uv = (vec2(gl_GlobalInvocationID.xy) + vec2(0.5f)) / sizeF;
-    ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
-
-    float depthBufferValue = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos, 0).r;
-    float depth = calculateLinearDepth(depthBufferValue);
+    float depth = calculateLinearDepth(centerDepth);
 
     float aspectRatio = sizeF.x / sizeF.y;
     vec2 noise = generateRandomNoise(vec2(pixelPos));
@@ -71,29 +73,67 @@ void main()
 
     float ao = 0.0;
     float totalSamples = 0.0;
-    float fade = 1.0;
 
     const int NUM_RINGS = 3;
     const int NUM_SAMPLES = 6;
+    vec3 normal = getWorldNormal(pixelPos);
 
     for(int i = 0; i < NUM_RINGS; i++)
     {
-        fade *= 0.5;
+        float radius = float(i) / float(NUM_RINGS);
         for(int j = 0; j < NUM_SAMPLES; j++)
         {
-            float step = 3.14159265 * 2.0 / float(NUM_SAMPLES * i);
-            
-            sampleWidth = (cos(float(j) * step) * float(i));
-            sampleHeight = (sin(float(j) * step) * float(i));
-            
-            float newDepthValue = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos + ivec2(sampleWidth * w, sampleHeight * h), 0).r;
-            ao += compareDepths(depth, calculateLinearDepth(newDepthValue)) * fade;
-            totalSamples += 1.0 * fade;
+            float step = 3.14159265 * 2.0 / float(NUM_SAMPLES);
+            sampleWidth = (cos(float(j) * step) * radius);
+            sampleHeight = (sin(float(j) * step) * radius);
+            vec3 sampleOffset = vec3(sampleWidth, sampleHeight, mix(0.1, 1.0, radius));
+            sampleOffset = normalize(sampleOffset);
+            if(dot(sampleOffset, normal) < 0.0)
+            {
+                sampleOffset *= -1;
+            }
+
+            ivec2 screenOffset = ivec2(sampleOffset.x * w * size.x, sampleOffset.y * h * size.y);
+            ivec2 samplePos = pixelPos + screenOffset;
+            float newDepthValue = calculateLinearDepth(texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], samplePos, 0).r);
+            vec3 sampleDir = normalize(sampleOffset);
+            ao += compareDepths(depth, newDepthValue, normal, sampleDir);
+            totalSamples += 1.0;
         }
     }
     
     ao /= totalSamples;
     ao = 1.0 - ao;
 
-    imageStore(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)], ivec2(gl_GlobalInvocationID.xy), vec4(ao, ao, ao, 1.0));
+    return ao;
+}
+
+void main()
+{
+    ivec2 size = imageSize(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)]);
+    ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
+
+    float depthBufferValue = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos, 0).r;
+    float ao = calculateAO(pixelPos, depthBufferValue);
+
+    float blurredAO = 0.0;
+    int samples = 0;
+    const int radius = 1;
+
+    for(int i = -radius; i <= radius; i++)
+    {
+        for(int j = -radius; j <= radius; j++)
+        {
+            ivec2 samplePos = pixelPos + ivec2(i, j);
+            if(any(lessThan(samplePos, ivec2(0)))) continue;
+            if(any(greaterThanEqual(samplePos, size))) continue;
+
+            float sampleDepth = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], samplePos, 0).r;
+            blurredAO += calculateAO(samplePos, sampleDepth);
+            samples++;
+        }
+    }
+
+    float finalAO = mix(ao, blurredAO / float(samples), 0.7);
+    imageStore(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)], ivec2(gl_GlobalInvocationID.xy), vec4(finalAO, finalAO, finalAO, 1.0));
 }
