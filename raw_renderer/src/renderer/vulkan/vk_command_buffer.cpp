@@ -293,23 +293,16 @@ namespace Raw::GFX
         vkCmdDrawIndexed(vulkanCmdBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
-    void VulkanCommandBuffer::BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform, u32 materialIndex)
+    void VulkanCommandBuffer::BindVertexBuffer(const BufferHandle& vertexBuffer)
     {
-        // always bind a graphics pipeline first that has push contants, 
-        // the push constant will contain the objects transform and
-        // the buffer device address of the vertex buffer
         struct
         {
-            glm::mat4 transform;
-            u32 materialIndex;
             VkDeviceAddress vBuffer;
         } pushConstant;
 
         u32 pcSize = sizeof(pushConstant);
 
         VulkanBuffer* buffer = VulkanGFXDevice::Get()->GetBuffer(vertexBuffer);
-        pushConstant.transform = transform;
-        pushConstant.materialIndex = materialIndex;
         pushConstant.vBuffer = buffer->bufferAddress;
 
         vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, pcSize, &pushConstant);
@@ -319,6 +312,23 @@ namespace Raw::GFX
     {
         VulkanBuffer* buffer = VulkanGFXDevice::Get()->GetBuffer(indexBuffer);
         vkCmdBindIndexBuffer(vulkanCmdBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+    }
+
+    void VulkanCommandBuffer::BindDrawData(glm::mat4 transform, u32 materialIndex)
+    {
+        struct
+        {
+            u32 materialIndex;
+            u32 padding;
+            glm::mat4 transform;
+        } pushConstant;
+
+        u32 pcSize = sizeof(pushConstant);
+
+        pushConstant.transform = transform;
+        pushConstant.materialIndex = materialIndex;
+
+        vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, (u32)sizeof(VkDeviceAddress), pcSize, &pushConstant);
     }
 
     void VulkanCommandBuffer::BindFullScreenData(const FullScreenData& data)

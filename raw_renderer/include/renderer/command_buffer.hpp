@@ -30,7 +30,8 @@ namespace Raw::GFX
         virtual void Draw(u32 vertexCount, u32 instanceCount, u32 firstVertex, u32 firstInstance) = 0;
         virtual void DrawIndexed(u32 indexCount, u32 instanceCount, u32 firstIndex, i32 vertexOffset, u32 firstInstance) = 0;
         virtual void DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount) = 0;
-        virtual void BindVertexBuffer(const BufferHandle& vertexBuffer, glm::mat4 transform = glm::mat4(1.f), u32 materialIndex = U32_MAX) = 0;
+        virtual void BindVertexBuffer(const BufferHandle& vertexBuffer) = 0;
+        virtual void BindDrawData(glm::mat4 transform = glm::mat4(1.f), u32 materialIndex = U32_MAX) = 0;
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) = 0;
         virtual void BindFullScreenData(const FullScreenData& data) = 0;
         virtual void BindAOData(const AOData& data) = 0;
