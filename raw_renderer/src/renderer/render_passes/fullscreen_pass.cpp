@@ -83,6 +83,9 @@ namespace Raw::GFX
 
         tex = (TextureResource*)TextureLoader::Instance()->Get(AMBIENT_OCCLUSION_TEX);
         data.occlusion = tex->handle.id;
+
+        tex = (TextureResource*)TextureLoader::Instance()->Get(REFLECTION_TEX);
+        data.reflection = tex->handle.id;
     }
 
     bool FullScreenPass::OnWindowResize(const WindowResizeEvent& e)
