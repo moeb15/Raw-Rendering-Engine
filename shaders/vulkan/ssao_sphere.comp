@@ -1,0 +1,126 @@
+#version 460
+#extension GL_EXT_nonuniform_qualifier : enable
+
+layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
+
+layout(set = 1, binding = 0) uniform sampler2D globalTextures[];
+layout(rgba16f, set = 1, binding = 3) uniform image2D globalImages[];
+
+layout(push_constant) uniform constants{
+    uint depthIndex;
+    uint outputSSAOIndex;
+    uint normalIndex;
+} PushConstants;
+
+const float nearDist = 0.1f;
+const float farDist = 100.0f;
+
+vec3 getWorldNormal(ivec2 pixelPos)
+{
+    vec3 normal = texelFetch(globalTextures[nonuniformEXT(PushConstants.normalIndex)], pixelPos, 0).xyz;
+    return normalize(normal * 2.0 - 1.0);
+}
+
+vec2 generateRandomNoise(in vec2 coord)
+{
+    float noiseX = (fract(sin(dot(coord, vec2(12.9898, 78.233))) * 43758.5453));
+    float noiseY = (fract(sin(dot(coord, vec2(12.9898, 78.233) * 2.0)) * 43758.5453));
+
+    return vec2(noiseX, noiseY) * 0.004;
+}
+
+float calculateLinearDepth(float depth)
+{
+    return (nearDist * farDist) / (farDist - depth * (farDist - nearDist));
+}
+
+float compareDepths(float d1, float d2)
+{
+    const float aoCap = 0.5;
+    const float aoMultiplier = 50.0;
+    const float depthTolerance = 0.001;
+    const float aoRange = 60.0;
+    float depthDiff = sqrt(clamp(1.0 - (d1 - d2) / (aoRange / (farDist - nearDist)), 0.0, 1.0));
+    float ao = min(aoCap, max(0.0, d1 - d2 - depthTolerance) * aoMultiplier) * depthDiff;
+
+    return ao;
+}
+
+float calculateAO(ivec2 pixelPos, float centerDepth)
+{
+    ivec2 size = imageSize(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)]);
+    vec2 sizeF = vec2(size);
+
+    if(gl_GlobalInvocationID.x >= size.x || gl_GlobalInvocationID.y >= size.y)
+    {
+        return 0.0;
+    }
+
+    float depth = calculateLinearDepth(centerDepth);
+
+    float aspectRatio = sizeF.x / sizeF.y;
+    vec2 noise = generateRandomNoise(vec2(pixelPos));
+
+    float w = (1.0 / sizeF.x) / clamp(depth, 0.05, 1.0) + (noise.x * (1.0 - noise.x));
+    float h = (1.0 / sizeF.y) / clamp(depth, 0.05, 1.0) + (noise.y * (1.0 - noise.y));
+
+    w *= sizeF.x / 2.0;
+    h *= sizeF.y / 2.0;
+
+    float sampleWidth;
+    float sampleHeight;
+
+    float ao = 0.0;
+    float totalSamples = 0.0;
+
+    const int NUM_RINGS = 3;
+    const int NUM_SAMPLES = 12;
+
+    for(int i = 0; i < NUM_RINGS; i++)
+    {
+        for(int j = 0; j < NUM_SAMPLES; j++)
+        {
+            float step = 3.14159265 * 2.0 / float(NUM_SAMPLES);
+            sampleWidth = (cos(float(j) * step) * float(i));
+            sampleHeight = (sin(float(j) * step) * float(i));
+            float newDepthValue = calculateLinearDepth(texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos + ivec2(int(sampleWidth * w), int(sampleHeight * h)), 0).r);
+            ao += compareDepths(depth, newDepthValue);
+            totalSamples += 1.0;
+        }
+    }
+    
+    ao /= totalSamples;
+    ao = 1.0 - ao;
+
+    return ao;
+}
+
+void main()
+{
+    ivec2 size = imageSize(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)]);
+    ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
+
+    float depthBufferValue = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], pixelPos, 0).r;
+    float ao = calculateAO(pixelPos, depthBufferValue);
+
+    float blurredAO = 0.0;
+    int samples = 0;
+    const int radius = 1;
+
+    for(int i = -radius; i <= radius; i++)
+    {
+        for(int j = -radius; j <= radius; j++)
+        {
+            ivec2 samplePos = pixelPos + ivec2(i, j);
+            if(any(lessThan(samplePos, ivec2(0)))) continue;
+            if(any(greaterThanEqual(samplePos, size))) continue;
+
+            float sampleDepth = texelFetch(globalTextures[nonuniformEXT(PushConstants.depthIndex)], samplePos, 0).r;
+            blurredAO += calculateAO(samplePos, sampleDepth);
+            samples++;
+        }
+    }
+
+    float finalAO = mix(ao, blurredAO / float(samples), 0.7);
+    imageStore(globalImages[nonuniformEXT(PushConstants.outputSSAOIndex)], ivec2(gl_GlobalInvocationID.xy), vec4(finalAO, finalAO, finalAO, 1.0));
+}
