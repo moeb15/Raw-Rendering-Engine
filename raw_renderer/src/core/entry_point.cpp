@@ -11,7 +11,7 @@ int main()
     Logger::Get()->InititalizeLogger();
     RAW_INFO("Logger Initialized.");
     Application* app = new Application();
-    app->Initialize({ "Raw Renderer", 1280, 720 });
+    app->Initialize({ "Raw Renderer", 1600, 900 });
     app->Run();
     app->Shutdown();
     return 0;
