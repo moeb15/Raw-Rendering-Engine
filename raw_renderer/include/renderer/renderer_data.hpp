@@ -81,6 +81,14 @@ namespace Raw::GFX
         i32 metallicRoughness{ -1 };
     };
 
+    struct MeshDrawData
+    {
+        glm::mat4 transform;
+        u32 materialIndex;
+        u32 isTransparent;
+        u32 padding[2];
+    };
+
     struct MeshData
     {
         u32 indexCount{ 0 };
@@ -90,6 +98,8 @@ namespace Raw::GFX
         u32 transformIndex{ 0 };
         u32 instanceCount{ 0 };
         u32 baseInstance{ 0 };
+        glm::vec3 boundsMin{ glm::vec3(0) };
+        glm::vec3 boundsMax{ glm::vec3(0) };
     };
 
     struct SceneData
@@ -97,12 +107,15 @@ namespace Raw::GFX
         BufferHandle vertexBuffer;
         BufferHandle indexBuffer;
         BufferHandle indirectBuffer;
+        BufferHandle meshDrawsBuffer;
         u64 vertexBufferId;
         u64 indexBufferId;
         u64 indirectBufferId;
+        u64 meshDrawsBufferId;
 
         u32 drawCount{ 0 };
         std::vector<MeshData> meshes;
+        std::vector<MeshDrawData> draws;
         std::unordered_map<u64, u32> meshLookup;
         std::vector<u32> images;
         std::vector<u64> imageIds;
