@@ -38,6 +38,13 @@ struct Vertex{
 	vec4 tangent;
 };
 
+struct MeshDrawData
+{
+    mat4 transform;
+    uint materialIndex;
+    uint isTransparent;
+};
+
 float heaviside( float v ) {
     if ( v > 0.0 ) return 1.0;
     else return 0.0;
@@ -53,13 +60,13 @@ float distGGX(vec3 N, vec3 H, float roughness)
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return (a2 * heaviside(NdotH)) / max(denom, 0.0001);
+    return a2 / max(denom, 0.0001);
 }
 
 float geomSchlickGGX(float NdotV, float roughness)
 {
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
+    float r = (roughness + 1.0) * 0.5;
+    float k = r * r;
     float denom = NdotV * (1.0 - k) + k;
     
     return NdotV / denom;
@@ -77,5 +84,5 @@ float geomSmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-    return F0 + (1.0 - F0) *pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
