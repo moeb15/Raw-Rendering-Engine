@@ -364,10 +364,15 @@ namespace Raw::GFX
         VkPhysicalDeviceFeatures2 features2 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
         vkGetPhysicalDeviceFeatures2(m_GPU, &features2);
 
+        // use shader draw parameters
+        VkPhysicalDeviceVulkan11Features features11 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
+        features11.shaderDrawParameters = true;
+        features2.pNext = &features11;
+        
         // use buffer device addressing feature 
         // use descriptor indexing
         VkPhysicalDeviceVulkan12Features features12 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
-        features2.pNext = &features12;
+        features11.pNext = &features12;
 
         // use dynamic rendering
         VkPhysicalDeviceVulkan13Features features13 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };
@@ -379,6 +384,7 @@ namespace Raw::GFX
         RAW_ASSERT_MSG(features12.descriptorBindingPartiallyBound  && features12.runtimeDescriptorArray, "Bindless rendering not supported!");
         RAW_ASSERT_MSG(features12.bufferDeviceAddress, "Buffer device addressing not supported!");
         RAW_ASSERT_MSG(features13.dynamicRendering, "Dynamic rendering not supported!");
+        RAW_ASSERT_MSG(features11.shaderDrawParameters, "Shader Draw Parameters not supported!");
         RAW_ASSERT_MSG(features2.features.multiDrawIndirect, "MDI not supported!");
 
         VkDeviceCreateInfo deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
@@ -589,7 +595,7 @@ namespace Raw::GFX
 
         VulkanDescriptorLayoutBuilder builder;
         builder.Init();
-        builder.AddBinding(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS);
+        builder.AddBinding(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL);
         m_SceneLayout = builder.Build();
         builder.Shutdown();
 
@@ -952,6 +958,10 @@ namespace Raw::GFX
 
         vkUtils::TransitionImage(curCmdBuffer->vulkanCmdBuffer, m_SwapchainImages[m_SwapchainImageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, false);
 
+        for(u32 i = 0; i < alternateSubmissionQueue.size(); i++)
+        {
+            submissionQueue.push_back(alternateSubmissionQueue[i]);
+        }
         
         for(u32 i = 0; i < frameManager.threadCount; i++)
         {
@@ -969,19 +979,18 @@ namespace Raw::GFX
         VkPipelineStageFlags altWaitStages[] = { VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         
-        VkSubmitInfo altSignalInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+        /*VkSubmitInfo altSignalInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
         altSignalInfo.waitSemaphoreCount = 1;
         altSignalInfo.pWaitSemaphores = &m_ImageAcquiredSemaphore[m_CurFrame];
         altSignalInfo.pWaitDstStageMask = altWaitStages;
         altSignalInfo.signalSemaphoreCount = 1;
         altSignalInfo.pSignalSemaphores = &signalSubmissionQueue[m_CurFrame];
         altSignalInfo.commandBufferCount = (u32)alternateSubmissionQueue.size();
-        altSignalInfo.pCommandBuffers = alternateSubmissionQueue.data();
+        altSignalInfo.pCommandBuffers = alternateSubmissionQueue.data();*/
 
         VkFence* curFence = &m_CmdBufferExecutedFence[m_CurFrame];
         VkSemaphore* signalSemaphore = &m_RenderCompleteSemaphore[m_CurFrame];
-
-        VkSemaphore waitSemaphores[] = { signalSubmissionQueue[m_CurFrame] };
+        VkSemaphore waitSemaphores[] = { m_ImageAcquiredSemaphore[m_CurFrame] };
 
         VkSubmitInfo submitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submitInfo.waitSemaphoreCount = 1;
@@ -992,9 +1001,9 @@ namespace Raw::GFX
         submitInfo.pCommandBuffers = submissionQueue.data();
         submitInfo.pWaitDstStageMask = waitStages;
 
-        VkSubmitInfo submitInfos[] = { altSignalInfo, submitInfo };
+        VkSubmitInfo submitInfos[] = { submitInfo };
 
-        VK_CHECK(vkQueueSubmit(m_GFXQueue, 2, submitInfos, *curFence));
+        VK_CHECK(vkQueueSubmit(m_GFXQueue, ArraySize(submitInfos), submitInfos, *curFence));
 
         VkPresentInfoKHR presentInfo = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
         presentInfo.pSwapchains = &m_Swapchain;
