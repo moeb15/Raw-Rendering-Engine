@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference2 : require
 #extension GL_GOOGLE_include_directive : require
 
 #include "common.glsl"
@@ -16,23 +17,27 @@ layout(buffer_reference, std430) readonly buffer VertexBuffer{
 	Vertex vertices[];
 };
 
+layout(buffer_reference, std430) readonly buffer MeshDrawDataBuffer{
+	MeshDrawData meshData[];
+};
+
 layout(push_constant) uniform constants{
 	VertexBuffer vertexBuffer;
-	uint materialIndex;
-	mat4 transform;
+	MeshDrawDataBuffer meshBuffer;
 } PushConstants;
 
 void main() 
 {	
 	Vertex v = PushConstants.vertexBuffer.vertices[gl_VertexIndex];
+	MeshDrawData drawData = PushConstants.meshBuffer.meshData[gl_DrawID];
 
 	//output the position of each vertex
-	gl_Position = GlobalSceneData.viewProj * PushConstants.transform * vec4(v.position, 1.0f);
+	gl_Position = GlobalSceneData.viewProj * drawData.transform * vec4(v.position, 1.0f);
 	outUV = vec2(v.u, v.v);
-	outWorldPos = PushConstants.transform * vec4(v.position, 1.0f);
+	outWorldPos = drawData.transform * vec4(v.position, 1.0f);
 	outViewPos = outWorldPos.xyz / outWorldPos.w;
 	outNormal = v.normal;
-	outLightPos = GlobalSceneData.lightProj * GlobalSceneData.lightView * PushConstants.transform * vec4(v.position, 1.0f);
-	outMaterialIndex = PushConstants.materialIndex;
+	outLightPos = GlobalSceneData.lightProj * GlobalSceneData.lightView * drawData.transform * vec4(v.position, 1.0f);
+	outMaterialIndex = drawData.materialIndex;
 	outTangent = v.tangent;
 }
