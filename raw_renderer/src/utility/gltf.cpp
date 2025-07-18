@@ -10,6 +10,7 @@
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>
 #include <tiny_gltf.h>
+#include <limits>
 
 using namespace tinygltf;
 
@@ -65,6 +66,8 @@ namespace Raw::Utils
                 const Mesh gltfMesh = input.meshes[inputNode.mesh];
                 RAW_DEBUG("Loading glTF mesh: %s", gltfMesh.name.c_str());
                 GFX::MeshData mesh;
+                glm::vec3 boundsMin = glm::vec3(std::numeric_limits<float>::max());
+                glm::vec3 boundsMax = glm::vec3(std::numeric_limits<float>::min());
                 
                 for(u64 i = 0; i < gltfMesh.primitives.size(); i++)
                 {
@@ -132,6 +135,8 @@ namespace Raw::Utils
                                 vert.tangent = glm::vec4(temp.x, temp.y, temp.z, 1.0f);
                             }
 
+                            boundsMin = glm::min(boundsMin, vert.position);
+                            boundsMax = glm::max(boundsMax, vert.position);
                             vertices.push_back(vert);
                         }
                     }
@@ -187,6 +192,8 @@ namespace Raw::Utils
                     mesh.baseInstance = 0;
                     mesh.instanceCount = 1;
                     mesh.transformIndex = (u32)outSceneData.transforms.size() - 1;
+                    mesh.boundsMin = boundsMin;
+                    mesh.boundsMax = boundsMax;
 
                     GFX::IndirectDraw iDraw;
                     iDraw.firstIndex = firstIndex;
@@ -197,6 +204,13 @@ namespace Raw::Utils
 
                     indirectDraws.push_back(iDraw);
 
+                    GFX::MeshDrawData meshDraw;
+                    meshDraw.transform = curTransform;
+                    meshDraw.materialIndex = mesh.materialIndex;
+                    meshDraw.isTransparent = input.materials[meshDraw.materialIndex].alphaMode == "OPAQUE" ? 0 : 1;
+
+                    outSceneData.drawCount++;
+                    outSceneData.draws.push_back(meshDraw);
                     outSceneData.meshes.push_back(mesh);
                 }
             }
@@ -349,12 +363,19 @@ namespace Raw::Utils
                 indirectDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
                 indirectDesc.type = GFX::EBufferType::INDIRECT | GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST;
 
+                GFX::BufferDesc meshDrawDesc;
+                meshDrawDesc.bufferSize = outScene.draws.size() * sizeof(GFX::MeshDrawData);
+                meshDrawDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
+                meshDrawDesc.type =  GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST | GFX::EBufferType::SHADER_DEVICE_ADDRESS;
+
                 std::string vBufferName = filepath + "_vertex";
                 std::string iBufferName = filepath + "_index";
                 std::string indirectBufferName = filepath + "_indirect";
+                std::string meshDrawBufferName = filepath + "_meshDraw";
                 BufferResource* vRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(vBufferName.c_str(), vertexDesc, vertices.data());
                 BufferResource* iRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(iBufferName.c_str(), indexDesc, indices.data());
                 BufferResource* indirectRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(indirectBufferName.c_str(), indirectDesc, indirectDraws.data());
+                BufferResource* meshDrawRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(meshDrawBufferName.c_str(), meshDrawDesc, outScene.draws.data());
                 
                 outScene.vertexBuffer = vRes->buffer;
                 vRes->AddRef();
@@ -362,10 +383,13 @@ namespace Raw::Utils
                 iRes->AddRef();
                 outScene.indirectBuffer = indirectRes->buffer;
                 indirectRes->AddRef();
+                outScene.meshDrawsBuffer = meshDrawRes->buffer;
+                meshDrawRes->AddRef();
 
                 outScene.vertexBufferId = vRes->bufferId;
                 outScene.indexBufferId = iRes->bufferId;
                 outScene.indirectBufferId = indirectRes->bufferId;
+                outScene.meshDrawsBufferId = meshDrawRes->bufferId;
                 outScene.drawCount = (u32)indirectDraws.size();
             }
         );
