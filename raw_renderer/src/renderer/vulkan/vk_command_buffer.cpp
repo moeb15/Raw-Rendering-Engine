@@ -314,19 +314,17 @@ namespace Raw::GFX
         vkCmdBindIndexBuffer(vulkanCmdBuffer, buffer->buffer, 0, VK_INDEX_TYPE_UINT32);
     }
 
-    void VulkanCommandBuffer::BindDrawData(glm::mat4 transform, u32 materialIndex)
+    void VulkanCommandBuffer::BindDrawData(const BufferHandle& meshDrawBuffer)
     {
         struct
         {
-            u32 materialIndex;
-            u32 padding;
-            glm::mat4 transform;
+            VkDeviceAddress meshDrawBuffer;
         } pushConstant;
 
         u32 pcSize = sizeof(pushConstant);
 
-        pushConstant.transform = transform;
-        pushConstant.materialIndex = materialIndex;
+        VulkanBuffer* buffer = VulkanGFXDevice::Get()->GetBuffer(meshDrawBuffer);
+        pushConstant.meshDrawBuffer = buffer->bufferAddress;
 
         vkCmdPushConstants(vulkanCmdBuffer, activeGraphicsPipeline->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, (u32)sizeof(VkDeviceAddress), pcSize, &pushConstant);
     }
