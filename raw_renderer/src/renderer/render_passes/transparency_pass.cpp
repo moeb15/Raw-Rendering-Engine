@@ -79,18 +79,10 @@ namespace Raw::GFX
         cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::CLEAR, ERenderingOp::LOAD);
         cmd->BindPipeline(technique.gfxPipeline);
 
-        for(u32 i = 0; i < scene->meshes.size(); i++)
-        {
-            MeshData mesh = scene->meshes[i];
-            glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
-            PBRMaterialData material = scene->materials[mesh.materialIndex];
-            if(!material.isTransparent) continue;
-        
-            cmd->BindVertexBuffer(scene->vertexBuffer);
-            cmd->BindDrawData(meshTransform, mesh.materialIndex);
-            cmd->BindIndexBuffer(scene->indexBuffer);
-            cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
-        }
+        cmd->BindVertexBuffer(scene->vertexBuffer);
+        cmd->BindDrawData(scene->meshDrawsBuffer);
+        cmd->BindIndexBuffer(scene->indexBuffer);
+        cmd->DrawIndexedIndirect(scene->indirectBuffer, 0, scene->drawCount);
 
         cmd->EndRendering();
     }
@@ -104,19 +96,11 @@ namespace Raw::GFX
 
                 cmd->BeginRendering(technique.gfxPipeline, ERenderingOp::CLEAR, ERenderingOp::LOAD);
                 cmd->BindPipeline(technique.gfxPipeline);
-
-                for(u32 i = 0; i < scene->meshes.size(); i++)
-                {
-                    MeshData mesh = scene->meshes[i];
-                    glm::mat4 meshTransform = scene->transforms[mesh.transformIndex];
-                    PBRMaterialData material = scene->materials[mesh.materialIndex];
-                    if(!material.isTransparent) continue;
-                    
-                    cmd->BindVertexBuffer(scene->vertexBuffer);
-                    cmd->BindDrawData(meshTransform, mesh.materialIndex);
-                    cmd->BindIndexBuffer(scene->indexBuffer);
-                    cmd->DrawIndexed(mesh.indexCount, mesh.instanceCount, mesh.firstIndex, mesh.vertexOffset, mesh.baseInstance);
-                }
+                
+                cmd->BindVertexBuffer(scene->vertexBuffer);
+                cmd->BindDrawData(scene->meshDrawsBuffer);
+                cmd->BindIndexBuffer(scene->indexBuffer);
+                cmd->DrawIndexedIndirect(scene->indirectBuffer, 0, scene->drawCount);
 
                 cmd->EndRendering();
 
