@@ -12,7 +12,24 @@ namespace Raw::GFX
     #define AMBIENT_OCCLUSION_TEX "aoTexture"
     #define REFLECTION_TEX "refTexture"
 
-    // must be 256 byte aligned
+    struct Plane
+    {
+        glm::vec3 normal{ 0.f, 1.f, 0.f };
+        f32 distance{ 0.f };
+    };
+
+    struct Frustum
+    {
+        Plane topFace;
+        Plane bottomFace;
+
+        Plane rightFace;
+        Plane leftFace;
+
+        Plane farFace;
+        Plane nearFace;
+    };
+
     struct GlobalSceneData
     {
         glm::mat4 view{ 1.f };
@@ -26,7 +43,8 @@ namespace Raw::GFX
         f32 lightIntensity{ 1.f };
         u32 shadowMapIndex{ U32_MAX };
         f32 padding0[2];
-        glm::vec4 padding2[2];
+        Frustum cameraFrustum;
+        glm::mat4 padding1[3];
     };
 
     // 16 byte aligned
@@ -98,8 +116,14 @@ namespace Raw::GFX
         u32 transformIndex{ 0 };
         u32 instanceCount{ 0 };
         u32 baseInstance{ 0 };
+    };
+
+    struct MeshBoundsData
+    {
         glm::vec3 boundsMin{ glm::vec3(0) };
+        u32 padding0{ 0 };
         glm::vec3 boundsMax{ glm::vec3(0) };
+        u32 padding1{ 0 };
     };
 
     struct SceneData
@@ -107,14 +131,19 @@ namespace Raw::GFX
         BufferHandle vertexBuffer;
         BufferHandle indexBuffer;
         BufferHandle indirectBuffer;
+        BufferHandle culledIndirectBuffer;
         BufferHandle meshDrawsBuffer;
+        BufferHandle meshBoundsBuffer;
         u64 vertexBufferId;
         u64 indexBufferId;
         u64 indirectBufferId;
+        u64 culledIndirectBufferId;
         u64 meshDrawsBufferId;
+        u64 meshBoundsBufferId;
 
         u32 drawCount{ 0 };
         std::vector<MeshData> meshes;
+        std::vector<MeshBoundsData> meshBoundsData;
         std::vector<MeshDrawData> draws;
         std::unordered_map<u64, u32> meshLookup;
         std::vector<u32> images;
