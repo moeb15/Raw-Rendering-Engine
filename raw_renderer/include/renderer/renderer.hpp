@@ -20,6 +20,7 @@ namespace Raw::GFX
     class ShadowPass;
     class SSAOPass;
     class SSRPass;
+    class FrustumCullingPass;
 
     class Renderer
     {
@@ -37,6 +38,7 @@ namespace Raw::GFX
         ShadowPass* m_ShadowPass;
         SSAOPass* m_SSAOPass;
         SSRPass* m_SSRPass;
+        FrustumCullingPass* m_FrustumCullingPass;
 
         BufferHandle m_SceneDataBuffer;
     };

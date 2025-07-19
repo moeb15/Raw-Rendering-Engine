@@ -15,6 +15,7 @@
 #include "renderer/render_passes/shadow_pass.hpp"
 #include "renderer/render_passes/ssao_pass.hpp"
 #include "renderer/render_passes/ssr_pass.hpp"
+#include "renderer/render_passes/frustum_culling_pass.hpp"
 
 namespace Raw::GFX
 {
@@ -43,6 +44,9 @@ namespace Raw::GFX
 
         m_ShadowPass = new ShadowPass();
         m_ShadowPass->Init(device);
+
+        m_FrustumCullingPass = new FrustumCullingPass();
+        m_FrustumCullingPass->Init(device);
 
         BufferDesc sceneDataDesc;
         sceneDataDesc.bufferSize = sizeof(GlobalSceneData);
@@ -79,6 +83,7 @@ namespace Raw::GFX
         sceneData.projection = camera.GetProjectionMatrix();
         sceneData.projInv = glm::inverse(sceneData.projection);
         sceneData.viewProj = sceneData.projection * sceneData.view;
+        sceneData.cameraFrustum = camera.GetFrustum();
         if(tex) sceneData.shadowMapIndex = tex->handle.id;
 
         IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
@@ -98,6 +103,7 @@ namespace Raw::GFX
         cmd->BeginCommandBuffer();
         cmd->Clear(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
        
+        m_FrustumCullingPass->Execute(device, cmd, scene->GetSceneData());
         m_GeometryPass->Execute(device, cmd, scene->GetSceneData());
         m_TransparencyPass->Execute(device, cmd, scene->GetSceneData());
         m_ShadowPass->Execute(device, cmd, scene->GetSceneData());
