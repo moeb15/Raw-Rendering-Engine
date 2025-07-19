@@ -1,0 +1,83 @@
+#version 460
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_GOOGLE_include_directive : require
+
+#include "common.glsl"
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+layout(buffer_reference, std430) readonly buffer IndirectDrawDataBuffer{
+	IndirectDrawData indirectDraws[];
+};
+
+layout(buffer_reference, std430) buffer OutputIndirectDrawDataBuffer{
+	IndirectDrawData indirectDraws[];
+};
+
+layout(buffer_reference, std430) readonly buffer MeshBoundsDataBuffer{
+	MeshBoundsData meshData[];
+};
+
+layout(push_constant) uniform constants{
+	IndirectDrawDataBuffer draws;
+	MeshBoundsDataBuffer meshBounds;
+    OutputIndirectDrawDataBuffer outputDraws;
+    uint drawCount;
+} PushConstants;
+
+bool IsVisible(uint drawId)
+{
+    MeshBoundsData bounds = PushConstants.meshBounds.meshData[drawId];
+    Frustum cameraFrustum = GlobalSceneData.cameraFrustum;
+    vec3 center = (bounds.min + bounds.max) * 0.5;
+    vec3 extents = (bounds.max - bounds.min) * 0.5;
+    
+    float distFrom[6];
+    float absDiff[6];
+    float dist[6];
+
+    distFrom[0] = dot(center, cameraFrustum.topFace.normal);
+    distFrom[1] = dot(center, cameraFrustum.bottomFace.normal);
+    distFrom[2] = dot(center, cameraFrustum.leftFace.normal);
+    distFrom[3] = dot(center, cameraFrustum.rightFace.normal);
+    distFrom[4] = dot(center, cameraFrustum.nearFace.normal);
+    distFrom[5] = dot(center, cameraFrustum.farFace.normal);
+
+    absDiff[0] = dot(abs(cameraFrustum.topFace.normal), extents);
+    absDiff[1] = dot(abs(cameraFrustum.bottomFace.normal), extents);
+    absDiff[2] = dot(abs(cameraFrustum.leftFace.normal), extents);
+    absDiff[3] = dot(abs(cameraFrustum.rightFace.normal), extents);
+    absDiff[4] = dot(abs(cameraFrustum.nearFace.normal), extents);
+    absDiff[5] = dot(abs(cameraFrustum.farFace.normal), extents);
+
+    dist[0] = cameraFrustum.topFace.distance;
+    dist[1] = cameraFrustum.bottomFace.distance;
+    dist[2] = cameraFrustum.leftFace.distance;
+    dist[3] = cameraFrustum.rightFace.distance;
+    dist[4] = cameraFrustum.nearFace.distance;
+    dist[5] = cameraFrustum.farFace.distance;
+
+    for(int i = 0; i < 6; i++)
+    {
+        if(distFrom[i] + absDiff[i] + dist[i] < 0.0) return false;
+    }  
+
+    return true;
+}
+
+void main()
+{
+    uint drawId = gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+    if(drawId >= PushConstants.drawCount) return;
+    
+    bool visible = IsVisible(drawId);
+    if(!visible)
+    {
+        atomicExchange(PushConstants.outputDraws.indirectDraws[drawId].instanceCount, 0);    
+    }
+    else
+    {
+        PushConstants.outputDraws.indirectDraws[drawId].instanceCount = PushConstants.draws.indirectDraws[drawId].instanceCount;
+    }
+}
