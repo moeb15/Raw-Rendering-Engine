@@ -52,7 +52,7 @@ namespace Raw::GFX
         cmd->BindVertexBuffer(scene->vertexBuffer);
         cmd->BindDrawData(scene->meshDrawsBuffer);
         cmd->BindIndexBuffer(scene->indexBuffer);
-        cmd->DrawIndexedIndirect(scene->indirectBuffer, 0, scene->drawCount);
+        cmd->DrawIndexedIndirect(scene->culledIndirectBuffer, 0, scene->drawCount);
 
         cmd->EndRendering();
     }
@@ -70,7 +70,7 @@ namespace Raw::GFX
                 cmd->BindVertexBuffer(scene->vertexBuffer);
                 cmd->BindDrawData(scene->meshDrawsBuffer);
                 cmd->BindIndexBuffer(scene->indexBuffer);
-                cmd->DrawIndexedIndirect(scene->indirectBuffer, 0, scene->drawCount);
+                cmd->DrawIndexedIndirect(scene->culledIndirectBuffer, 0, scene->drawCount);
 
                 cmd->EndRendering();
 

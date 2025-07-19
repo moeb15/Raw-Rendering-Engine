@@ -28,7 +28,7 @@ namespace Raw::GFX
         occlusionDesc.format = ETextureFormat::R8G8B8A8_UNORM;
         occlusionTex = device->CreateTexture(occlusionDesc);
 
-        techniqueDesc.computeShader.shaderName = "ssao";
+        techniqueDesc.computeShader.shaderName = "ssao_sphere";
         techniqueDesc.computeShader.stage = EShaderStage::COMPUTE_STAGE;
 
         techniqueDesc.pushConstant.offset = 0;
