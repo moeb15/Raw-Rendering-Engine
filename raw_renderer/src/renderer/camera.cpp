@@ -26,6 +26,8 @@ namespace Raw::GFX
 
         m_DefaultView = rotation * translation;
 
+        CreateFrustum();
+
         m_ResizeHandler = BIND_EVENT_FN(Camera::OnWindowResize);
         EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_ResizeHandler, WindowResizeEvent), WindowResizeEvent::GetStaticEventType());
     }
@@ -92,6 +94,52 @@ namespace Raw::GFX
 		}
         
 		m_Position += m_MoveSpeed * dt;
+
+        CreateFrustum();
+    }
+
+    void Camera::CreateFrustum()
+    {
+        const glm::mat4 vp = GetProjectionMatrix() * GetViewMatrix();
+        
+        m_Frustum.leftFace.normal.x = vp[0][3] + vp[0][0]; 
+        m_Frustum.leftFace.normal.y = vp[1][3] + vp[1][0]; 
+        m_Frustum.leftFace.normal.z = vp[2][3] + vp[2][0]; 
+        m_Frustum.leftFace.distance = vp[3][3] + vp[3][0]; 
+
+        m_Frustum.rightFace.normal.x = vp[0][3] - vp[0][0]; 
+        m_Frustum.rightFace.normal.y = vp[1][3] - vp[1][0]; 
+        m_Frustum.rightFace.normal.z = vp[2][3] - vp[2][0]; 
+        m_Frustum.rightFace.distance = vp[3][3] - vp[3][0];
+
+        m_Frustum.bottomFace.normal.x = vp[0][3] + vp[0][1]; 
+        m_Frustum.bottomFace.normal.y = vp[1][3] + vp[1][1]; 
+        m_Frustum.bottomFace.normal.z = vp[2][3] + vp[2][1]; 
+        m_Frustum.bottomFace.distance = vp[3][3] + vp[3][1]; 
+
+        m_Frustum.topFace.normal.x = vp[0][3] - vp[0][1]; 
+        m_Frustum.topFace.normal.y = vp[1][3] - vp[1][1]; 
+        m_Frustum.topFace.normal.z = vp[2][3] - vp[2][1]; 
+        m_Frustum.topFace.distance = vp[3][3] - vp[3][1];
+
+        m_Frustum.nearFace.normal.x = vp[0][3] + vp[0][2]; 
+        m_Frustum.nearFace.normal.y = vp[1][3] + vp[1][2]; 
+        m_Frustum.nearFace.normal.z = vp[2][3] + vp[2][2]; 
+        m_Frustum.nearFace.distance = vp[3][3] + vp[3][2]; 
+
+        m_Frustum.farFace.normal.x = vp[0][3] - vp[0][2]; 
+        m_Frustum.farFace.normal.y = vp[1][3] - vp[1][2]; 
+        m_Frustum.farFace.normal.z = vp[2][3] - vp[2][2]; 
+        m_Frustum.farFace.distance = vp[3][3] - vp[3][2];
+        
+        m_Frustum.leftFace.normal = normalize(m_Frustum.leftFace.normal);
+        m_Frustum.rightFace.normal = normalize(m_Frustum.rightFace.normal);
+
+        m_Frustum.bottomFace.normal = normalize(m_Frustum.bottomFace.normal);
+        m_Frustum.topFace.normal = normalize(m_Frustum.topFace.normal);
+
+        m_Frustum.nearFace.normal = normalize(m_Frustum.nearFace.normal);
+        m_Frustum.farFace.normal = normalize(m_Frustum.farFace.normal);
     }
 
     bool Camera::OnWindowResize(const WindowResizeEvent& e)

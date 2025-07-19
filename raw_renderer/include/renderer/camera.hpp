@@ -3,6 +3,7 @@
 #include "core/defines.hpp"
 #include "events/event_handler.hpp"
 #include "events/core_events.hpp"
+#include "renderer/renderer_data.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -19,6 +20,7 @@ namespace Raw::GFX
              const glm::vec3& target, const glm::vec3& up);
         void Update(f32 dt);
 
+        RAW_INLINE Frustum GetFrustum() const { return m_Frustum; }
         RAW_INLINE glm::mat4 GetDefaultViewMatrix() const { return m_DefaultView; }
         RAW_INLINE glm::mat4 GetViewMatrix() const 
         {
@@ -49,6 +51,9 @@ namespace Raw::GFX
             m_Orientation = pitchRot * m_Orientation;
         }
 
+    private:
+        void CreateFrustum();
+
     public:
         f32 Acceleration{ 50.f };
         f32 MaxSpeed{ 100.f };
@@ -72,6 +77,7 @@ namespace Raw::GFX
         glm::quat m_Orientation{ glm::vec3(0.f) };
         glm::vec3 m_Rotation{ 0.f };
         glm::vec3 m_MoveSpeed{ 0.f };
+        Frustum m_Frustum;
 
         f32 m_Fov{ 0.f };
         f32 m_AspectRatio{ 0.f };
