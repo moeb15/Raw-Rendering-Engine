@@ -24,7 +24,7 @@ namespace Raw::GFX
         virtual void Dispatch(const ComputePipelineHandle& handle, u32 groupX, u32 groupY, u32 groupZ) override;
         virtual void TransitionImage(const TextureHandle& handle, ETextureLayout newLayout) override;
         virtual void AddMemoryBarrier(EAccessFlags srcAccess, EAccessFlags dstAccess, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) override;
-        virtual void AddMemoryBarrier(const BufferHandle& buffer, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) override;
+        virtual void AddMemoryBarrier(const BufferHandle& buffer, EAccessFlags srcAccess, EAccessFlags dstAccess, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) override;
         virtual void BeginRendering(const GraphicsPipelineHandle& handle, ERenderingOp colorOp = ERenderingOp::LOAD, ERenderingOp depthOp = ERenderingOp::LOAD) override;
         virtual void BindPipeline(const GraphicsPipelineHandle& handle) override;
         virtual void BindComputePipeline(const ComputePipelineHandle& handle) override;
@@ -37,6 +37,7 @@ namespace Raw::GFX
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) override;
         virtual void BindFullScreenData(const FullScreenData& data) override;
         virtual void BindAOData(const AOData& data) override;
+        virtual void BindCullData(const BufferHandle& indirectDrawData, const BufferHandle& meshBoundsData, const BufferHandle& culledIndirectDrawData, u32 drawCount) override;
 
         
         VkCommandBuffer vulkanCmdBuffer{ VK_NULL_HANDLE };

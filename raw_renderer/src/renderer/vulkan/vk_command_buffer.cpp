@@ -119,13 +119,16 @@ namespace Raw::GFX
         vkUtils::AddMemoryBarrier(vulkanCmdBuffer, srcVk, dstVk, srcVkP, dstVkP);
     }
 
-    void VulkanCommandBuffer::AddMemoryBarrier(const BufferHandle& buffer, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline)
+    void VulkanCommandBuffer::AddMemoryBarrier(const BufferHandle& buffer, EAccessFlags srcAccess, EAccessFlags dstAccess, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline)
     {
         VulkanBuffer* vBuffer = VulkanGFXDevice::Get()->GetBuffer(buffer);
 
+        VkAccessFlagBits srcVk = vkUtils::ToVkAccessFlags(srcAccess);
+        VkAccessFlagBits dstVk = vkUtils::ToVkAccessFlags(dstAccess);
+
         VkBufferMemoryBarrier bufferBarrier = { VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER };
-        bufferBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-        bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        bufferBarrier.srcAccessMask = srcVk;
+        bufferBarrier.dstAccessMask = dstVk;
         bufferBarrier.buffer = vBuffer->buffer;
         bufferBarrier.offset = 0;
         bufferBarrier.size = VK_WHOLE_SIZE;
@@ -381,9 +384,33 @@ namespace Raw::GFX
         vkCmdPushConstants(vulkanCmdBuffer, activeComputePipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pcSize, &pushConstant);
     }
 
+    void VulkanCommandBuffer::BindCullData(const BufferHandle& indirectDrawData, const BufferHandle& meshBoundsData, const BufferHandle& culledIndirectDrawData, u32 drawCount)
+    {
+        struct
+        {
+            VkDeviceAddress indirectDrawBuffer;
+            VkDeviceAddress meshBoundsBuffer;
+            VkDeviceAddress culledIndrectBuffer;
+            u32 drawCount;
+            u32 padding;
+        } pushConstant;
+
+        u32 pcSize = sizeof(pushConstant);
+
+        VulkanBuffer* iBuffer = VulkanGFXDevice::Get()->GetBuffer(indirectDrawData);
+        VulkanBuffer* mbBuffer = VulkanGFXDevice::Get()->GetBuffer(meshBoundsData);
+        VulkanBuffer* ciBuffer = VulkanGFXDevice::Get()->GetBuffer(culledIndirectDrawData);
+        pushConstant.indirectDrawBuffer = iBuffer->bufferAddress;
+        pushConstant.meshBoundsBuffer = mbBuffer->bufferAddress;
+        pushConstant.culledIndrectBuffer = ciBuffer->bufferAddress;
+        pushConstant.drawCount = drawCount;
+
+        vkCmdPushConstants(vulkanCmdBuffer, activeComputePipeline->pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, pcSize, &pushConstant);
+    }
+
     void VulkanCommandBuffer::DrawIndexedIndirect(const BufferHandle& indirectBuffer, u64 offset, u32 drawCount)
     {
         VulkanBuffer* iBuffer = VulkanGFXDevice::Get()->GetBuffer(indirectBuffer);
-        vkCmdDrawIndexedIndirect(vulkanCmdBuffer, iBuffer->buffer, offset, drawCount, sizeof(VkDrawIndexedIndirectCommand));
+        vkCmdDrawIndexedIndirect(vulkanCmdBuffer, iBuffer->buffer, offset, drawCount, sizeof(GFX::IndirectDraw));
     }
 }

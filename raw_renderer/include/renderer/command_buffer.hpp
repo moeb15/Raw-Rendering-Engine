@@ -22,7 +22,7 @@ namespace Raw::GFX
         virtual void Dispatch(const ComputePipelineHandle& handle, u32 groupX, u32 groupY, u32 groupZ) = 0;
         virtual void TransitionImage(const TextureHandle& handle, ETextureLayout newLayout) = 0;
         virtual void AddMemoryBarrier(EAccessFlags srcAccess, EAccessFlags dstAccess, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) = 0;
-        virtual void AddMemoryBarrier(const BufferHandle& buffer, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) = 0;
+        virtual void AddMemoryBarrier(const BufferHandle& buffer, EAccessFlags srcAccess, EAccessFlags dstAccess, EPipelineStageFlags srcPipeline, EPipelineStageFlags dstPipeline) = 0;
         virtual void BeginRendering(const GraphicsPipelineHandle& handle, ERenderingOp colorOp = ERenderingOp::LOAD, ERenderingOp depthOp = ERenderingOp::LOAD) = 0;
         virtual void BindPipeline(const GraphicsPipelineHandle& handle) = 0;
         virtual void BindComputePipeline(const ComputePipelineHandle& handle) = 0;
@@ -35,6 +35,7 @@ namespace Raw::GFX
         virtual void BindIndexBuffer(const BufferHandle& indexBuffer) = 0;
         virtual void BindFullScreenData(const FullScreenData& data) = 0;
         virtual void BindAOData(const AOData& data) = 0;
+        virtual void BindCullData(const BufferHandle& indirectDrawData, const BufferHandle& meshBoundsData, const BufferHandle& culledIndirectDrawData, u32 drawCount) = 0;
         
         ECommandBufferState GetState() const { return m_State->load(); }
         EQueueType GetQueueType() const { return m_QueueType; }
