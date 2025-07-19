@@ -4,6 +4,39 @@
 #define AMBIENT 0.5
 #define BIAS 0.0005
 
+struct Plane
+{
+    vec3 normal;
+    float distance;
+};
+
+struct Frustum
+{
+    Plane topFace;
+    Plane bottomFace;
+
+    Plane rightFace;
+    Plane leftFace;
+    
+    Plane farFace;
+    Plane nearFace;
+};
+
+struct IndirectDrawData
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+
+struct MeshBoundsData
+{
+    vec3 min;
+    vec3 max;
+};
+
 layout (set = 0, binding = 0) uniform sceneData{
 	mat4 view;
     mat4 viewInv;	
@@ -15,6 +48,7 @@ layout (set = 0, binding = 0) uniform sceneData{
 	vec4 lightDir;
 	float lightIntensity;
 	uint shadowMapIndex;
+    Frustum cameraFrustum;
 } GlobalSceneData;
 
 struct PBRMaterial
