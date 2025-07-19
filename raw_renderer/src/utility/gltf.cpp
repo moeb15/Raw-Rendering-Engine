@@ -192,8 +192,10 @@ namespace Raw::Utils
                     mesh.baseInstance = 0;
                     mesh.instanceCount = 1;
                     mesh.transformIndex = (u32)outSceneData.transforms.size() - 1;
-                    mesh.boundsMin = boundsMin;
-                    mesh.boundsMax = boundsMax;
+
+                    GFX::MeshBoundsData meshBounds;
+                    meshBounds.boundsMin = boundsMin;
+                    meshBounds.boundsMax = boundsMax;
 
                     GFX::IndirectDraw iDraw;
                     iDraw.firstIndex = firstIndex;
@@ -212,6 +214,7 @@ namespace Raw::Utils
                     outSceneData.drawCount++;
                     outSceneData.draws.push_back(meshDraw);
                     outSceneData.meshes.push_back(mesh);
+                    outSceneData.meshBoundsData.push_back(meshBounds);
                 }
             }
         }
@@ -361,21 +364,30 @@ namespace Raw::Utils
                 GFX::BufferDesc indirectDesc;
                 indirectDesc.bufferSize = indirectDraws.size() * sizeof(GFX::IndirectDraw);
                 indirectDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
-                indirectDesc.type = GFX::EBufferType::INDIRECT | GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST;
+                indirectDesc.type = GFX::EBufferType::INDIRECT | GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST | GFX::EBufferType::SHADER_DEVICE_ADDRESS;
 
                 GFX::BufferDesc meshDrawDesc;
                 meshDrawDesc.bufferSize = outScene.draws.size() * sizeof(GFX::MeshDrawData);
                 meshDrawDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
                 meshDrawDesc.type =  GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST | GFX::EBufferType::SHADER_DEVICE_ADDRESS;
 
+                GFX::BufferDesc meshBoundsDataDesc;
+                meshBoundsDataDesc.bufferSize = outScene.draws.size() * sizeof(GFX::MeshBoundsData);
+                meshBoundsDataDesc.memoryType = GFX::EMemoryType::DEVICE_LOCAL;
+                meshBoundsDataDesc.type =  GFX::EBufferType::STORAGE | GFX::EBufferType::TRANSFER_DST | GFX::EBufferType::SHADER_DEVICE_ADDRESS;
+
                 std::string vBufferName = filepath + "_vertex";
                 std::string iBufferName = filepath + "_index";
                 std::string indirectBufferName = filepath + "_indirect";
+                std::string culledIndirectBufferName = filepath + "_culled_indirect";
                 std::string meshDrawBufferName = filepath + "_meshDraw";
+                std::string meshBoundsDataBufferName = filepath + "_meshBoundsData";
                 BufferResource* vRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(vBufferName.c_str(), vertexDesc, vertices.data());
                 BufferResource* iRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(iBufferName.c_str(), indexDesc, indices.data());
                 BufferResource* indirectRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(indirectBufferName.c_str(), indirectDesc, indirectDraws.data());
+                BufferResource* culledIndirectRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(culledIndirectBufferName.c_str(), indirectDesc, indirectDraws.data());
                 BufferResource* meshDrawRes = (BufferResource*)BufferLoader::Instance()->CreateBuffer(meshDrawBufferName.c_str(), meshDrawDesc, outScene.draws.data());
+                BufferResource* meshBoundsData = (BufferResource*)BufferLoader::Instance()->CreateBuffer(meshBoundsDataBufferName.c_str(), meshBoundsDataDesc, outScene.meshBoundsData.data());
                 
                 outScene.vertexBuffer = vRes->buffer;
                 vRes->AddRef();
@@ -383,13 +395,19 @@ namespace Raw::Utils
                 iRes->AddRef();
                 outScene.indirectBuffer = indirectRes->buffer;
                 indirectRes->AddRef();
+                outScene.culledIndirectBuffer = culledIndirectRes->buffer;
+                culledIndirectRes->AddRef();
                 outScene.meshDrawsBuffer = meshDrawRes->buffer;
                 meshDrawRes->AddRef();
+                outScene.meshBoundsBuffer = meshBoundsData->buffer;
+                meshBoundsData->AddRef();
 
                 outScene.vertexBufferId = vRes->bufferId;
                 outScene.indexBufferId = iRes->bufferId;
                 outScene.indirectBufferId = indirectRes->bufferId;
+                outScene.culledIndirectBufferId = culledIndirectRes->bufferId;
                 outScene.meshDrawsBufferId = meshDrawRes->bufferId;
+                outScene.meshBoundsBufferId = meshBoundsData->bufferId;
                 outScene.drawCount = (u32)indirectDraws.size();
             }
         );
