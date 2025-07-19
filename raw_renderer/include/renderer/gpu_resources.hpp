@@ -270,6 +270,8 @@ namespace Raw::GFX
         COLOR_ATTACHMENT_WRITE_BIT              = 1 << 1,
         DEPTH_STENCIL_ATTACHMENT_READ_BIT       = 1 << 2,
         DEPTH_STENCIL_ATTACHMENT_WRITE_BIT      = 1 << 3,
+        SHADER_WRITE_BIT                        = 1 << 4,
+        SHADER_READ_BIT                         = 1 << 5,
     };
 
     enum EPipelineStageFlags
@@ -280,10 +282,11 @@ namespace Raw::GFX
         TESSELLATION_EVALUATION_SHADER_BIT      = 1 << 3,
         GEOMETRY_SHADER_BIT                     = 1 << 4,
         FRAGMENT_SHADER_BIT                     = 1 << 5,
-        EARLY_FRAGMENT_TESTS_BIT                = 1 << 6,
-        LATE_FRAGMENT_TESTS_BIT                 = 1 << 7,
-        COLOR_ATTACHMENT_OUTPUT_BIT             = 1 << 8,
-        NONE                                    = 1 << 9,
+        COMPUTE_SHADER_BIT                      = 1 << 6,
+        EARLY_FRAGMENT_TESTS_BIT                = 1 << 7,
+        LATE_FRAGMENT_TESTS_BIT                 = 1 << 8,
+        COLOR_ATTACHMENT_OUTPUT_BIT             = 1 << 9,
+        NONE                                    = 1 << 10,
     };
 
     enum class ERenderingOp : u8
