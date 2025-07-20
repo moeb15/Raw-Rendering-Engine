@@ -62,8 +62,9 @@ namespace Raw::GFX
         cmd->BindComputePipeline(technique.computePipeline);
         cmd->BindAOData(data);
 
-        u32 groupX = device->GetBackBufferSize().first / 16;
-        u32 groupY = device->GetBackBufferSize().second / 16;
+        u32 workGroupSize = 16;
+        u32 groupX = (device->GetBackBufferSize().first + workGroupSize - 1) / workGroupSize;
+        u32 groupY = (device->GetBackBufferSize().second + workGroupSize - 1)/ workGroupSize;
         u32 groupZ = 1;
         cmd->Dispatch(technique.computePipeline, groupX, groupY, groupZ);
     }
