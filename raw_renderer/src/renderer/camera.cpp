@@ -100,17 +100,17 @@ namespace Raw::GFX
 
     void Camera::CreateFrustum()
     {
-        const glm::mat4 vp = GetProjectionMatrix() * GetViewMatrix();
+        const glm::mat4 vp = glm::transpose(GetProjectionMatrix() * GetViewMatrix());
         
-        m_Frustum.leftFace.normal.x = vp[0][3] + vp[0][0]; 
-        m_Frustum.leftFace.normal.y = vp[1][3] + vp[1][0]; 
-        m_Frustum.leftFace.normal.z = vp[2][3] + vp[2][0]; 
-        m_Frustum.leftFace.distance = vp[3][3] + vp[3][0]; 
+        m_Frustum.leftFace.normal.x = vp[0][3] - vp[0][0]; 
+        m_Frustum.leftFace.normal.y = vp[1][3] - vp[1][0]; 
+        m_Frustum.leftFace.normal.z = vp[2][3] - vp[2][0]; 
+        m_Frustum.leftFace.distance = vp[3][3] - vp[3][0]; 
 
-        m_Frustum.rightFace.normal.x = vp[0][3] - vp[0][0]; 
-        m_Frustum.rightFace.normal.y = vp[1][3] - vp[1][0]; 
-        m_Frustum.rightFace.normal.z = vp[2][3] - vp[2][0]; 
-        m_Frustum.rightFace.distance = vp[3][3] - vp[3][0];
+        m_Frustum.rightFace.normal.x = vp[0][3] + vp[0][0]; 
+        m_Frustum.rightFace.normal.y = vp[1][3] + vp[1][0]; 
+        m_Frustum.rightFace.normal.z = vp[2][3] + vp[2][0]; 
+        m_Frustum.rightFace.distance = vp[3][3] + vp[3][0];
 
         m_Frustum.bottomFace.normal.x = vp[0][3] + vp[0][1]; 
         m_Frustum.bottomFace.normal.y = vp[1][3] + vp[1][1]; 
@@ -122,15 +122,15 @@ namespace Raw::GFX
         m_Frustum.topFace.normal.z = vp[2][3] - vp[2][1]; 
         m_Frustum.topFace.distance = vp[3][3] - vp[3][1];
 
-        m_Frustum.nearFace.normal.x = vp[0][3] + vp[0][2]; 
-        m_Frustum.nearFace.normal.y = vp[1][3] + vp[1][2]; 
-        m_Frustum.nearFace.normal.z = vp[2][3] + vp[2][2]; 
-        m_Frustum.nearFace.distance = vp[3][3] + vp[3][2]; 
+        m_Frustum.nearFace.normal.x = vp[0][3] - vp[0][2]; 
+        m_Frustum.nearFace.normal.y = vp[1][3] - vp[1][2]; 
+        m_Frustum.nearFace.normal.z = vp[2][3] - vp[2][2]; 
+        m_Frustum.nearFace.distance = vp[3][3] - vp[3][2]; 
 
-        m_Frustum.farFace.normal.x = vp[0][3] - vp[0][2]; 
-        m_Frustum.farFace.normal.y = vp[1][3] - vp[1][2]; 
-        m_Frustum.farFace.normal.z = vp[2][3] - vp[2][2]; 
-        m_Frustum.farFace.distance = vp[3][3] - vp[3][2];
+        m_Frustum.farFace.normal.x = vp[0][2]; 
+        m_Frustum.farFace.normal.y = vp[1][2]; 
+        m_Frustum.farFace.normal.z = vp[2][2]; 
+        m_Frustum.farFace.distance = vp[3][2];
         
         m_Frustum.leftFace.normal = normalize(m_Frustum.leftFace.normal);
         m_Frustum.rightFace.normal = normalize(m_Frustum.rightFace.normal);
