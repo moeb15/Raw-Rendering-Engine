@@ -22,6 +22,16 @@ namespace Raw
         ImGuiIO& io = ImGui::GetIO();
         ImGui::Begin("Editor");
         ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::Text("W : Move Forward");
+        ImGui::Text("S : Move Backward");
+        ImGui::Text("A : Move Left");
+        ImGui::Text("D : Move Right");
+        ImGui::Text("Q : Move Up");
+        ImGui::Text("E : Move Down");
+        ImGui::Text("RMB : Rotate Camera");
+        ImGui::Separator();
+        ImGui::Spacing();
         ImGui::Text("Statistics");
         ImGui::Text("Framerate: %u fps", (u32)io.Framerate);
         ImGui::Text("Frametime: %0.2f ms", dt * 1000.f);
