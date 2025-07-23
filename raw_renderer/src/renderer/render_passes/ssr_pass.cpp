@@ -67,6 +67,8 @@ namespace Raw::GFX
         u32 groupY = (device->GetBackBufferSize().second + workGroupSize - 1)/ workGroupSize;
         u32 groupZ = 1;
         cmd->Dispatch(technique.computePipeline, groupX, groupY, groupZ);
+    
+        cmd->TransitionImage(ssrTex, ETextureLayout::SHADER_READ_ONLY_OPTIMAL);
     }
 
     void SSRPass::ExecuteAsync(IGFXDevice* device, SceneData* scene)
@@ -78,14 +80,18 @@ namespace Raw::GFX
                 cmd->TransitionImage(ssrTex, ETextureLayout::GENERAL);
                 cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::GENERAL);
                 cmd->TransitionImage({ (u32)data.normalBuffer }, ETextureLayout::GENERAL);
-
+                
                 cmd->BindComputePipeline(technique.computePipeline);
                 cmd->BindAOData(data);
-
+                
                 u32 groupX = device->GetBackBufferSize().first / 16;
                 u32 groupY = device->GetBackBufferSize().second / 16;
                 u32 groupZ = 1;
                 cmd->Dispatch(technique.computePipeline, groupX, groupY, groupZ);
+                
+                cmd->TransitionImage(ssrTex, ETextureLayout::SHADER_READ_ONLY_OPTIMAL);
+                cmd->TransitionImage(device->GetDepthBufferHandle(), ETextureLayout::SHADER_READ_ONLY_OPTIMAL);
+                cmd->TransitionImage({ (u32)data.normalBuffer }, ETextureLayout::SHADER_READ_ONLY_OPTIMAL);
 
                 device->SubmitCommandBuffer(cmd);
             }
