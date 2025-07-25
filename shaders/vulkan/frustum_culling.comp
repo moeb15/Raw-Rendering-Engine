@@ -11,7 +11,7 @@ layout(buffer_reference, std430) readonly buffer IndirectDrawDataBuffer{
 	IndirectDrawData indirectDraws[];
 };
 
-layout(buffer_reference, std430) buffer OutputIndirectDrawDataBuffer{
+layout(buffer_reference, std430) writeonly buffer OutputIndirectDrawDataBuffer{
 	IndirectDrawData indirectDraws[];
 };
 
@@ -68,13 +68,13 @@ bool IsVisible(uint drawId)
 
 void main()
 {
-    uint drawId = gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+    uint drawId = gl_GlobalInvocationID.x;
     if(drawId >= PushConstants.drawCount) return;
     
     bool visible = IsVisible(drawId);
     if(!visible)
     {
-        atomicExchange(PushConstants.outputDraws.indirectDraws[drawId].instanceCount, 0);    
+        PushConstants.outputDraws.indirectDraws[drawId].instanceCount = 0;
     }
     else
     {

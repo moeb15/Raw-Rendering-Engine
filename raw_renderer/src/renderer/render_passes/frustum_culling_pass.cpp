@@ -23,6 +23,12 @@ namespace Raw::GFX
 
     void FrustumCullingPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
     {
+        cmd->AddMemoryBarrier(scene->culledIndirectBuffer, 
+            EAccessFlags::SHADER_READ_BIT, 
+            EAccessFlags::SHADER_WRITE_BIT, 
+            EPipelineStageFlags::COMPUTE_SHADER_BIT,
+            EPipelineStageFlags::COMPUTE_SHADER_BIT);
+
         cmd->BindComputePipeline(technique.computePipeline);
         cmd->BindCullData(scene->indirectBuffer, scene->meshBoundsBuffer, scene->culledIndirectBuffer, scene->drawCount);
 
@@ -45,6 +51,13 @@ namespace Raw::GFX
             {
                 ICommandBuffer* cmd = device->GetCommandBuffer();
                 cmd->BeginCommandBuffer();
+
+                cmd->AddMemoryBarrier(scene->culledIndirectBuffer, 
+                    EAccessFlags::SHADER_READ_BIT, 
+                    EAccessFlags::SHADER_WRITE_BIT, 
+                    EPipelineStageFlags::COMPUTE_SHADER_BIT,
+                    EPipelineStageFlags::COMPUTE_SHADER_BIT);
+
                 cmd->BindComputePipeline(technique.computePipeline);
                 cmd->BindCullData(scene->indirectBuffer, scene->meshBoundsBuffer, scene->culledIndirectBuffer, scene->drawCount);
 
