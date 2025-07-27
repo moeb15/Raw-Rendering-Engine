@@ -17,6 +17,7 @@ namespace Raw::GFX
     class GeometryPass;
     class TransparencyPass;
     class FullScreenPass;
+    class LightingPass;
     class ShadowPass;
     class SSAOPass;
     class SSRPass;
@@ -27,7 +28,7 @@ namespace Raw::GFX
     {
         bool enableAO{ true };
         bool enableSSR{ true };
-        bool enableFXAA{ true };
+        bool enableFXAA{ false };
     };
 
     class Renderer
@@ -43,6 +44,7 @@ namespace Raw::GFX
         GeometryPass* m_GeometryPass;
         TransparencyPass* m_TransparencyPass;
         FullScreenPass* m_FullScreenPass;
+        LightingPass* m_LightingPass;
         ShadowPass* m_ShadowPass;
         SSAOPass* m_SSAOPass;
         SSRPass* m_SSRPass;

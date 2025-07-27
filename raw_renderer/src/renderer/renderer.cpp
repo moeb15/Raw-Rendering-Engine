@@ -13,6 +13,7 @@
 #include "renderer/render_passes/geometry_pass.hpp"
 #include "renderer/render_passes/transparency_pass.hpp"
 #include "renderer/render_passes/fullscreen_pass.hpp"
+#include "renderer/render_passes/lighting_pass.hpp"
 #include "renderer/render_passes/shadow_pass.hpp"
 #include "renderer/render_passes/ssao_pass.hpp"
 #include "renderer/render_passes/ssr_pass.hpp"
@@ -40,6 +41,10 @@ namespace Raw::GFX
 
         m_SSRPass = new SSRPass();
         m_SSRPass->Init(device);
+
+        m_LightingPass = new LightingPass();
+        m_LightingPass->Init(device);
+        m_LightingPass->UpdateLightingData();
 
         m_FullScreenPass = new FullScreenPass();
         m_FullScreenPass->Init(device);
@@ -116,8 +121,9 @@ namespace Raw::GFX
         
         if(data.enableAO) m_SSAOPass->Execute(device, cmd, nullptr);
         if(data.enableSSR) m_SSRPass->Execute(device, cmd, nullptr);
-        m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
+        m_LightingPass->Execute(device, cmd, scene->GetSceneData());
         if(data.enableFXAA) m_FXAAPass->Execute(device, cmd, nullptr);
+        m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
 
         device->EndFrame();
     }
