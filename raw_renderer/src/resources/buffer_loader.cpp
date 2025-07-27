@@ -37,7 +37,7 @@ namespace Raw
             return m_BufferMap[hashedName].get();
         }
         GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
-        std::unique_ptr<BufferResource> res = std::make_unique<BufferResource>();
+        rstd::unique_ptr<BufferResource> res = rstd::make_unique<BufferResource>();
 
         res->bufferId = hashedName;
         if(initialData)
@@ -49,7 +49,7 @@ namespace Raw
             res->buffer = device->CreateBuffer(desc);
         }
 
-        m_BufferMap.insert(std::pair<u64, std::unique_ptr<BufferResource>>(hashedName, std::move(res)));
+        m_BufferMap.insert(std::pair<u64, rstd::unique_ptr<BufferResource>>(hashedName, std::move(res)));
         return m_BufferMap[hashedName].get();
     }
 

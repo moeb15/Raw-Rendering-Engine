@@ -2,7 +2,7 @@
 
 #include "renderer/gpu_resources.hpp"
 #include "resources/resource_manager.hpp"
-#include <memory>
+#include "memory/smart_pointers.hpp"
 #include <unordered_map>
 
 namespace Raw
@@ -37,7 +37,7 @@ namespace Raw
         Resource* CreateFromHandle(cstring name, const GFX::TextureHandle& texture);
         
     private:
-        std::unordered_map<u64, std::unique_ptr<TextureResource>> m_TextureMap;
+        std::unordered_map<u64, rstd::unique_ptr<TextureResource>> m_TextureMap;
 
     };
 }

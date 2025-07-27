@@ -3,7 +3,7 @@
 #include "renderer/renderer_data.hpp"
 #include "resources/resource_manager.hpp"
 #include "resources/resource_pool.hpp"
-#include <memory>
+#include "memory/smart_pointers.hpp"
 #include <unordered_map>
 
 namespace Raw
@@ -33,7 +33,7 @@ namespace Raw
         virtual void Remove(u64 hashedName) override {}
 
     private:
-        std::unordered_map<u64, std::unique_ptr<BufferResource>> m_BufferMap;
+        std::unordered_map<u64, rstd::unique_ptr<BufferResource>> m_BufferMap;
 
     };
 }

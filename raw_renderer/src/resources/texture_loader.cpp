@@ -157,7 +157,7 @@ namespace Raw
         desc.isRenderTarget = false;
         desc.isStorageImage = false;
         desc.type = GFX::ETextureType::TEXTURE2D;
-        std::unique_ptr<TextureResource> tex = std::make_unique<TextureResource>();
+        rstd::unique_ptr<TextureResource> tex = rstd::make_unique<TextureResource>();
         tex->name = name;
         tex->textureId = hashedName;
 
@@ -165,7 +165,7 @@ namespace Raw
         tex->handle = device->CreateTexture(desc, imageData);
         tex->AddRef();
 
-        m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
+        m_TextureMap.insert(std::pair<u64, rstd::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
 
         return m_TextureMap[hashedName].get();
     }
@@ -175,7 +175,7 @@ namespace Raw
         u64 hashedName = Utils::HashCString(name);
         if(m_TextureMap.find(hashedName) != m_TextureMap.end()) return m_TextureMap[hashedName].get();
 
-        std::unique_ptr<TextureResource> tex = std::make_unique<TextureResource>();
+        rstd::unique_ptr<TextureResource> tex = rstd::make_unique<TextureResource>();
         tex->name = name;
         tex->textureId = hashedName;
 
@@ -183,7 +183,7 @@ namespace Raw
         tex->handle = device->CreateTexture(desc, data);
         tex->AddRef();
 
-        m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
+        m_TextureMap.insert(std::pair<u64, rstd::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
         return m_TextureMap[hashedName].get();
     }
 
@@ -194,13 +194,13 @@ namespace Raw
         u64 hashedName = Utils::HashCString(name);
         if(m_TextureMap.find(hashedName) != m_TextureMap.end()) return m_TextureMap[hashedName].get();
 
-        std::unique_ptr<TextureResource> tex = std::make_unique<TextureResource>();
+        rstd::unique_ptr<TextureResource> tex = rstd::make_unique<TextureResource>();
         tex->name = name;
         tex->textureId = hashedName;
         tex->handle = texture;
         // tex->AddRef();
 
-        m_TextureMap.insert(std::pair<u64, std::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
+        m_TextureMap.insert(std::pair<u64, rstd::unique_ptr<TextureResource>>(hashedName, std::move(tex)));
         return m_TextureMap[hashedName].get();
     }
 }
