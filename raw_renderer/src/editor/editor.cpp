@@ -44,8 +44,8 @@ namespace Raw
         ImGui::Spacing();
         ImGui::Text("Render Pass Data");
         ImGui::Checkbox("SSAO", &passData->enableAO);
-        ImGui::Checkbox("SSR", &passData->enableFXAA);
-        ImGui::Checkbox("FXAA", &passData->enableSSR);
+        ImGui::Checkbox("SSR", &passData->enableSSR);
+        ImGui::Checkbox("FXAA", &passData->enableFXAA);
         ImGui::Spacing();
         
         ImGui::Separator();
@@ -93,6 +93,7 @@ namespace Raw
 
         if(prevData.enableAO != passData->enableAO)         EventManager::Get()->TriggerEvent(std::make_unique<AOToggledEvent>(passData->enableAO));
         if(prevData.enableSSR != passData->enableSSR)       EventManager::Get()->TriggerEvent(std::make_unique<ReflectionsToggledEvent>(passData->enableSSR));
+        if(prevData.enableFXAA != passData->enableFXAA)     EventManager::Get()->TriggerEvent(std::make_unique<AntiAliasingToggledEvent>(passData->enableSSR));
 
         prevData = *passData;
     }
