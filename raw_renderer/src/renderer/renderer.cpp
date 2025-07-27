@@ -16,6 +16,7 @@
 #include "renderer/render_passes/ssao_pass.hpp"
 #include "renderer/render_passes/ssr_pass.hpp"
 #include "renderer/render_passes/frustum_culling_pass.hpp"
+#include "renderer/render_passes/fxaa_pass.hpp"
 
 namespace Raw::GFX
 {
@@ -47,6 +48,9 @@ namespace Raw::GFX
 
         m_FrustumCullingPass = new FrustumCullingPass();
         m_FrustumCullingPass->Init(device);
+
+        m_FXAAPass = new FXAAPass();
+        m_FXAAPass->Init(device);
 
         BufferDesc sceneDataDesc;
         sceneDataDesc.bufferSize = sizeof(GlobalSceneData);
@@ -110,6 +114,7 @@ namespace Raw::GFX
         m_SSAOPass->Execute(device, cmd, nullptr);
         m_SSRPass->Execute(device, cmd, nullptr);
         m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
+        m_FXAAPass->Execute(device, cmd, nullptr);
 
         device->EndFrame();
     }
