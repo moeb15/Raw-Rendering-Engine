@@ -27,7 +27,8 @@ file(GLOB SOURCES
     "external/imgui/imstb_rectpack.h",
     "external/imgui/imstb_textedit.h",
     "external/imgui/imstb_truetype.h",
-    "external/imgui/imgui_demo.cpp" )
+    "external/imgui/imgui_demo.cpp"
+    "external/tlsf/tlsf.c" )
 
 add_executable(${PROJECT_NAME} ${SOURCES} )
 
@@ -43,6 +44,7 @@ target_include_directories(${PROJECT_NAME}
         "external/imgui"
         "external/wyhash"
         "external/tinygltf"
+        "external/tlsf"
 )
 
 target_link_libraries(${PROJECT_NAME}
