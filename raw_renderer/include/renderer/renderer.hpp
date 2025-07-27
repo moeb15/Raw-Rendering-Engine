@@ -23,6 +23,13 @@ namespace Raw::GFX
     class FrustumCullingPass;
     class FXAAPass;
 
+    struct RenderPassData
+    {
+        bool enableAO{ true };
+        bool enableSSR{ true };
+        bool enableFXAA{ true };
+    };
+
     class Renderer
     {
     public:

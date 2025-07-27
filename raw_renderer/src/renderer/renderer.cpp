@@ -3,6 +3,7 @@
 #include "renderer/gfxdevice.hpp"
 #include "renderer/command_buffer.hpp"
 #include "resources/buffer_loader.hpp"
+#include "resources/texture_loader.hpp"
 #include "scene/scene.hpp"
 #include "core/job_system.hpp"
 #include "editor/editor.hpp"
@@ -22,6 +23,7 @@ namespace Raw::GFX
 {
     f32 elapsedTime = 0.0f;
     GlobalSceneData sceneData;
+    RenderPassData data;
 
     void Renderer::Init()
     {
@@ -98,7 +100,7 @@ namespace Raw::GFX
         scene->Update(device);
 
         device->BeginOverlay();
-        Editor::Get()->Render(dt, *scene->GetSceneData(), sceneData);
+        Editor::Get()->Render(dt, *scene->GetSceneData(), sceneData, &data);
         
         device->BeginFrame();
         
@@ -111,10 +113,11 @@ namespace Raw::GFX
         m_GeometryPass->Execute(device, cmd, scene->GetSceneData());
         m_TransparencyPass->Execute(device, cmd, scene->GetSceneData());
         m_ShadowPass->Execute(device, cmd, scene->GetSceneData());
-        m_SSAOPass->Execute(device, cmd, nullptr);
-        m_SSRPass->Execute(device, cmd, nullptr);
+        
+        if(data.enableAO) m_SSAOPass->Execute(device, cmd, nullptr);
+        if(data.enableSSR) m_SSRPass->Execute(device, cmd, nullptr);
         m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
-        m_FXAAPass->Execute(device, cmd, nullptr);
+        if(data.enableFXAA) m_FXAAPass->Execute(device, cmd, nullptr);
 
         device->EndFrame();
     }
