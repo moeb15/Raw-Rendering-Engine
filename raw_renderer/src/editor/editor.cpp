@@ -91,9 +91,9 @@ namespace Raw
         }
         ImGui::End();
 
-        if(prevData.enableAO != passData->enableAO)         EventManager::Get()->TriggerEvent(std::make_unique<AOToggledEvent>(passData->enableAO));
-        if(prevData.enableSSR != passData->enableSSR)       EventManager::Get()->TriggerEvent(std::make_unique<ReflectionsToggledEvent>(passData->enableSSR));
-        if(prevData.enableFXAA != passData->enableFXAA)     EventManager::Get()->TriggerEvent(std::make_unique<AntiAliasingToggledEvent>(passData->enableSSR));
+        if(prevData.enableAO != passData->enableAO)         EventManager::Get()->TriggerEvent(rstd::make_unique<AOToggledEvent>(passData->enableAO));
+        if(prevData.enableSSR != passData->enableSSR)       EventManager::Get()->TriggerEvent(rstd::make_unique<ReflectionsToggledEvent>(passData->enableSSR));
+        if(prevData.enableFXAA != passData->enableFXAA)     EventManager::Get()->TriggerEvent(rstd::make_unique<AntiAliasingToggledEvent>(passData->enableSSR));
 
         prevData = *passData;
     }

@@ -14,6 +14,7 @@
 #include "renderer/renderer.hpp"
 #include "core/keycodes.hpp"
 #include "events/core_events.hpp"
+#include "memory/smart_pointers.hpp"
 
 namespace Raw
 {
@@ -72,7 +73,6 @@ namespace Raw
         BufferLoader::Instance()->Init();
         ResourceManager::Get()->SetLoader(TextureResource::k_ResourceType, TextureLoader::Instance());
         ResourceManager::Get()->SetLoader(BufferResource::k_ResourceType, BufferLoader::Instance());
-
         
         activeRenderPath = new GFX::Renderer();
         activeRenderPath->Init();
@@ -85,7 +85,7 @@ namespace Raw
         glm::vec3 target(0.0f,0.0f, -1.f);
         glm::vec3 up(0.f,1.f,0.0f);
         m_Camera = new GFX::Camera();
-        m_Camera->Init(0.1f, 1000.f, 75.f, 16.f / 9.f, pos, target, up);
+        m_Camera->Init(0.1f, 100.f, 75.f, 16.f / 9.f, pos, target, up);
 
         m_Suspended = false;
     }
@@ -99,7 +99,7 @@ namespace Raw
 
         while(ServiceLocator::Get()->GetServiceByType<MultiPlatformWindow>()->Update())
         {
-            if(Input::Get()->IsKeyPressed(RAW_KEY_ESCAPE)) EventManager::Get()->TriggerEvent(std::make_unique<ApplicationExitEvent>());
+            if(Input::Get()->IsKeyPressed(RAW_KEY_ESCAPE)) EventManager::Get()->TriggerEvent(rstd::make_unique<ApplicationExitEvent>());
            
             if(!m_Suspended)
             {

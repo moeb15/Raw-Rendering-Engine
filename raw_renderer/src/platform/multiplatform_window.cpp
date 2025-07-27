@@ -55,20 +55,20 @@ namespace Raw
             if(e.type == SDL_EVENT_QUIT)
             {
                 // Immediately trigger application exit event so listeners can respond
-                EventManager::Get()->TriggerEvent(std::make_unique<ApplicationExitEvent>());
+                EventManager::Get()->TriggerEvent(rstd::make_unique<ApplicationExitEvent>());
                 break;
             }
 
             // Immediately trigger window events
-            if (e.type == SDL_EVENT_WINDOW_RESIZED)          EventManager::Get()->TriggerEvent(std::make_unique<WindowResizeEvent>((u32)e.window.data1, (u32)e.window.data2));
-            if (e.type == SDL_EVENT_WINDOW_MINIMIZED)        EventManager::Get()->TriggerEvent(std::make_unique<WindowMinimizeEvent>());
-            if (e.type == SDL_EVENT_WINDOW_RESTORED)         EventManager::Get()->TriggerEvent(std::make_unique<WindowRestoredEvent>());
+            if (e.type == SDL_EVENT_WINDOW_RESIZED)          EventManager::Get()->TriggerEvent(rstd::make_unique<WindowResizeEvent>((u32)e.window.data1, (u32)e.window.data2));
+            if (e.type == SDL_EVENT_WINDOW_MINIMIZED)        EventManager::Get()->TriggerEvent(rstd::make_unique<WindowMinimizeEvent>());
+            if (e.type == SDL_EVENT_WINDOW_RESTORED)         EventManager::Get()->TriggerEvent(rstd::make_unique<WindowRestoredEvent>());
 
-            if (e.type == SDL_EVENT_KEY_DOWN)                EventManager::Get()->QueueEvent(std::make_unique<KeyPressedEvent>((u32)e.key.key));
-            if (e.type == SDL_EVENT_KEY_UP)                  EventManager::Get()->QueueEvent(std::make_unique<KeyReleasedEvent>((u32)e.key.key));
-            if (e.type == SDL_EVENT_MOUSE_MOTION)            EventManager::Get()->QueueEvent(std::make_unique<MouseMovedEvent>((u32)e.motion.x, (u32)e.motion.y));
-            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN)       EventManager::Get()->QueueEvent(std::make_unique<MouseButtonPressedEvent>((u32)e.button.button));
-            if (e.type == SDL_EVENT_MOUSE_BUTTON_UP)         EventManager::Get()->QueueEvent(std::make_unique<MouseButtonReleasedEvent>((u32)e.button.button));
+            if (e.type == SDL_EVENT_KEY_DOWN)                EventManager::Get()->QueueEvent(rstd::make_unique<KeyPressedEvent>((u32)e.key.key));
+            if (e.type == SDL_EVENT_KEY_UP)                  EventManager::Get()->QueueEvent(rstd::make_unique<KeyReleasedEvent>((u32)e.key.key));
+            if (e.type == SDL_EVENT_MOUSE_MOTION)            EventManager::Get()->QueueEvent(rstd::make_unique<MouseMovedEvent>((u32)e.motion.x, (u32)e.motion.y));
+            if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN)       EventManager::Get()->QueueEvent(rstd::make_unique<MouseButtonPressedEvent>((u32)e.button.button));
+            if (e.type == SDL_EVENT_MOUSE_BUTTON_UP)         EventManager::Get()->QueueEvent(rstd::make_unique<MouseButtonReleasedEvent>((u32)e.button.button));
         }
 
         return m_Running;

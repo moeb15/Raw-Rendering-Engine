@@ -11,8 +11,8 @@ namespace Raw
     class EventManager
     {
     private:
-        typedef std::unique_ptr<IEvent> IEventPtr;
-        typedef std::unique_ptr<IEventHandlerWrapper> EventHandlerPtr;
+        typedef rstd::unique_ptr<IEvent> IEventPtr;
+        typedef rstd::unique_ptr<IEventHandlerWrapper> EventHandlerPtr;
         typedef std::list<EventHandlerPtr> EventHandlerList;
         typedef std::list<IEventPtr> EventQueue;
         typedef std::map<u32, EventHandlerList> EventHandlerMap;

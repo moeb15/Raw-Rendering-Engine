@@ -2,12 +2,12 @@
 
 #include "core/defines.hpp"
 #include "events/event.hpp"
-#include <memory>
+#include "memory/smart_pointers.hpp"
 #include <functional>
 #include <string>
 
 #define GET_HANDLER_NAME(handler) handler.target_type().name()
-#define EVENT_HANDLER_PTR(handler, event) std::make_unique<EventHandlerWrapper<event>>(handler)
+#define EVENT_HANDLER_PTR(handler, event) rstd::make_unique<EventHandlerWrapper<event>>(handler)
 
 namespace Raw
 {
