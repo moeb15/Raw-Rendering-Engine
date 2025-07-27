@@ -1,11 +1,14 @@
 #include "editor/editor.hpp"
-#include "renderer/renderer_data.hpp"
+#include "renderer/renderer.hpp"
+#include "events/renderer_events.hpp"
+#include "events/event_manager.hpp"
 #include <imgui.h>
 #include <backends/imgui_impl_sdl3.h>
 
 namespace Raw
 {
     static Editor s_Editor;
+    static GFX::RenderPassData prevData;
 
     Editor* Editor::Get()
     {
@@ -17,7 +20,7 @@ namespace Raw
         ImGui_ImplSDL3_ProcessEvent(event);
     }
     
-    void Editor::Render(f32 dt, GFX::SceneData& sceneData, GFX::GlobalSceneData& globalData)
+    void Editor::Render(f32 dt, GFX::SceneData& sceneData, GFX::GlobalSceneData& globalData, GFX::RenderPassData* passData)
     {
         ImGuiIO& io = ImGui::GetIO();
         ImGui::Begin("Editor");
@@ -36,6 +39,15 @@ namespace Raw
         ImGui::Text("Framerate: %u fps", (u32)io.Framerate);
         ImGui::Text("Frametime: %0.2f ms", dt * 1000.f);
         ImGui::Spacing();
+        
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::Text("Render Pass Data");
+        ImGui::Checkbox("SSAO", &passData->enableAO);
+        ImGui::Checkbox("SSR", &passData->enableFXAA);
+        ImGui::Checkbox("FXAA", &passData->enableSSR);
+        ImGui::Spacing();
+        
         ImGui::Separator();
         ImGui::Spacing();
         ImGui::Text("Directional Light Settings:");
@@ -78,5 +90,10 @@ namespace Raw
             ImGui::TreePop();
         }
         ImGui::End();
+
+        if(prevData.enableAO != passData->enableAO)         EventManager::Get()->TriggerEvent(std::make_unique<AOToggledEvent>(passData->enableAO));
+        if(prevData.enableSSR != passData->enableSSR)       EventManager::Get()->TriggerEvent(std::make_unique<ReflectionsToggledEvent>(passData->enableSSR));
+
+        prevData = *passData;
     }
 }

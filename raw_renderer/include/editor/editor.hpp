@@ -7,11 +7,16 @@ union SDL_Event;
 
 namespace Raw
 {
+    namespace GFX
+    {
+        struct RenderPassData;
+    }
+
     class Editor
     {
     public:
         static Editor* Get();
         void ProcessEvent(SDL_Event* event);
-        void Render(f32 dt, GFX::SceneData& sceneData, GFX::GlobalSceneData& globalData);
+        void Render(f32 dt, GFX::SceneData& sceneData, GFX::GlobalSceneData& globalData, GFX::RenderPassData* passData);
     };
 }
