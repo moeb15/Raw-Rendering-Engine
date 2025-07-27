@@ -14,7 +14,12 @@ namespace Raw::GFX
     void FullScreenPass::Init(IGFXDevice* device)
     {
         m_ResizeHandler = BIND_EVENT_FN(FullScreenPass::OnWindowResize);
+        m_AOHandler = BIND_EVENT_FN(FullScreenPass::OnAOToggled);
+        m_ReflectHandler = BIND_EVENT_FN(FullScreenPass::OnReflectionsToggled);
+
         EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_ResizeHandler, WindowResizeEvent), WindowResizeEvent::GetStaticEventType());
+        EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_AOHandler, AOToggledEvent), AOToggledEvent::GetStaticEventType());
+        EventManager::Get()->Subscribe(EVENT_HANDLER_PTR(m_ReflectHandler, ReflectionsToggledEvent), ReflectionsToggledEvent::GetStaticEventType());
 
         techiqueDesc.sDesc.numStages = 2;
         techiqueDesc.sDesc.shaders[0].shaderName = "fullscreen";
@@ -93,5 +98,33 @@ namespace Raw::GFX
         UpdateFullScreenData();
 
         return false;
+    }
+
+    bool FullScreenPass::OnAOToggled(const AOToggledEvent& e)
+    {
+        if(e.GetState())
+        {
+            data.occlusion = ((TextureResource*)TextureLoader::Instance()->Get(AMBIENT_OCCLUSION_TEX))->handle.id;
+        }
+        else
+        {
+            data.occlusion = ((TextureResource*)TextureLoader::Instance()->Get(DEFAULT_TEXTURE))->handle.id;
+        }
+
+        return true;
+    }
+
+    bool FullScreenPass::OnReflectionsToggled(const ReflectionsToggledEvent& e)
+    {
+        if(e.GetState())
+        {
+            data.reflection = ((TextureResource*)TextureLoader::Instance()->Get(REFLECTION_TEX))->handle.id;
+        }
+        else
+        {
+            data.reflection = ((TextureResource*)TextureLoader::Instance()->Get(DEFAULT_EMISSIVE))->handle.id;
+        }
+
+        return true;
     }
 }

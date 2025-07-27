@@ -2,6 +2,7 @@
 
 #include "renderer/render_passes/render_pass.hpp"
 #include "events/core_events.hpp"
+#include "events/renderer_events.hpp"
 #include "events/event_handler.hpp"
 
 namespace Raw::GFX
@@ -22,6 +23,10 @@ namespace Raw::GFX
 
     private:
         bool OnWindowResize(const WindowResizeEvent& e);
+        bool OnAOToggled(const AOToggledEvent& e);
+        bool OnReflectionsToggled(const ReflectionsToggledEvent& e);
         EventHandler<WindowResizeEvent> m_ResizeHandler;
+        EventHandler<AOToggledEvent> m_AOHandler;
+        EventHandler<ReflectionsToggledEvent> m_ReflectHandler;
     };
 }
