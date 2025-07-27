@@ -23,10 +23,9 @@ namespace Raw::GFX
 
     private:
         bool OnWindowResize(const WindowResizeEvent& e);
-        bool OnAOToggled(const AOToggledEvent& e);
-        bool OnReflectionsToggled(const ReflectionsToggledEvent& e);
+        bool OnAAToggled(const AntiAliasingToggledEvent& e);
         EventHandler<WindowResizeEvent> m_ResizeHandler;
-        EventHandler<AOToggledEvent> m_AOHandler;
-        EventHandler<ReflectionsToggledEvent> m_ReflectHandler;
+        EventHandler<AntiAliasingToggledEvent> m_AAHandler;
+    
     };
 }
