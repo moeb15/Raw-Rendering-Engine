@@ -69,6 +69,9 @@ namespace Raw
             BufferLoader::Instance()->Unload(m_SceneData->vertexBufferId);
             BufferLoader::Instance()->Unload(m_SceneData->indexBufferId);
             BufferLoader::Instance()->Unload(m_SceneData->indirectBufferId);
+            BufferLoader::Instance()->Unload(m_SceneData->culledIndirectBufferId);
+            BufferLoader::Instance()->Unload(m_SceneData->meshDrawsBufferId);
+            BufferLoader::Instance()->Unload(m_SceneData->meshDrawsBufferId);
 
             for(u64 i = 0; i < m_SceneData->imageIds.size(); i++)
             {
@@ -78,7 +81,7 @@ namespace Raw
             m_SceneData.reset();
         }
 
-        m_SceneData = std::make_unique<GFX::SceneData>();
+        m_SceneData = rstd::make_unique<GFX::SceneData>();
         Utils::LoadGLTF(filePath, *m_SceneData.get());
 
         std::vector<GFX::PBRMaterialData> matData;

@@ -4,8 +4,8 @@
 #include "renderer/renderer_data.hpp"
 #include "renderer/gfxdevice.hpp"
 #include "scene/scene_graph.hpp"
+#include "memory/smart_pointers.hpp"
 #include <string>
-#include <memory>
 
 namespace Raw
 {
@@ -26,7 +26,7 @@ namespace Raw
 
     private:
         std::string m_Filepath{ "" };
-        std::unique_ptr<GFX::SceneData> m_SceneData{ nullptr };
+        rstd::unique_ptr<GFX::SceneData> m_SceneData{ nullptr };
         GFX::BufferHandle m_MaterialDataBuffer;
     };
 }
