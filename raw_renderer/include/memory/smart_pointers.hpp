@@ -22,12 +22,19 @@ namespace Raw::rstd
         T* release();
         void reset(T* newPtr = nullptr);
         T* operator->() const;
+        RAW_INLINE operator bool() const { return m_Ptr != nullptr; }
 
         template <typename U = T>
         std::enable_if_t<!std::is_same_v<U, void>, U&> operator*() const
         {
             RAW_ASSERT(m_Ptr != nullptr);
-            return m_Ptr;
+            return *m_Ptr;
+        }
+
+        unique_ptr& operator=(unique_ptr&& other) noexcept  
+        {
+            if(this != &other) reset(other.release());
+            return *this;
         }
 
         template <typename U, typename = std::enable_if_t<std::is_base_of_v<T, U> || std::is_convertible_v<T*, U*>>>
@@ -36,7 +43,7 @@ namespace Raw::rstd
         template <typename U, typename = std::enable_if_t<std::is_base_of_v<T, U> || std::is_convertible_v<T*, U*>>>
         unique_ptr& operator=(unique_ptr&& other) noexcept
         {
-            reset(other.release());
+            if(this != &other) reset(other.release());
             return *this;
         }
 
@@ -49,8 +56,7 @@ namespace Raw::rstd
     unique_ptr<T> make_unique(Args&&... args)
     {
         void* data = RAW_ALLOCATE(sizeof(T), alignof(T));
-        T* newObj = new (data) T(std::forward<Args>(args)...);
-        return unique_ptr<T>(newObj);
+        return unique_ptr<T>(new (data) T(std::forward<Args>(args)...));
     }
 
     template <typename T>
@@ -72,7 +78,7 @@ namespace Raw::rstd
     {
         T* oldPtr = release();
         m_Ptr = newPtr;
-        RAW_DEALLOCATE((void*)oldPtr);
+        RAW_DEALLOCATE(oldPtr);
     }
     
     template <typename T>
