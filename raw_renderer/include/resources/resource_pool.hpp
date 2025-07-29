@@ -2,6 +2,7 @@
 
 #include "core/defines.hpp"
 #include "core/asserts.hpp"
+#include "memory/memory_service.hpp"
 #include <bitset>
 #include <string.h>
 
@@ -50,7 +51,7 @@ namespace Raw
         m_PoolSize = poolSize;
 
         u64 allocSize = m_PoolSize * (m_ResourceSize + sizeof(u32));
-        m_Data = new u8[allocSize];
+        m_Data = (u8*)RAW_ALLOCATE(allocSize, 1);
 
         m_FreeIndices = (u32*)(m_Data + poolSize * m_ResourceSize);
         m_FreeIndicesHead = 0;
@@ -68,7 +69,7 @@ namespace Raw
     {
         RAW_ASSERT_MSG(m_FreeIndicesHead == 0, "Resource pool has unfreed resources!");
         RAW_ASSERT(m_UsedIndices == 0);     
-        delete m_Data;
+        RAW_DEALLOCATE(m_Data);
     }
 
     template <typename T>
