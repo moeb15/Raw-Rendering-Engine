@@ -15,6 +15,7 @@
 #include "core/keycodes.hpp"
 #include "events/core_events.hpp"
 #include "memory/smart_pointers.hpp"
+#include "memory/memory_service.hpp"
 
 namespace Raw
 {
@@ -74,17 +75,20 @@ namespace Raw
         ResourceManager::Get()->SetLoader(TextureResource::k_ResourceType, TextureLoader::Instance());
         ResourceManager::Get()->SetLoader(BufferResource::k_ResourceType, BufferLoader::Instance());
         
-        activeRenderPath = new GFX::Renderer();
+        void* rndrData = RAW_ALLOCATE(sizeof(GFX::Renderer), alignof(GFX::Renderer));
+        activeRenderPath = new (rndrData) GFX::Renderer();
         activeRenderPath->Init();
         
         GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
-        activeScene = new Scene();
+        void* sceneData = RAW_ALLOCATE(sizeof(Scene), alignof(Scene));
+        activeScene = new (sceneData) Scene();
         activeScene->Init(defaultSceneModel, device);
 
         glm::vec3 pos(0.0f, 0.0f, 0.f);
         glm::vec3 target(0.0f,0.0f, -1.f);
         glm::vec3 up(0.f,1.f,0.0f);
-        m_Camera = new GFX::Camera();
+        void* cmrData = RAW_ALLOCATE(sizeof(GFX::Camera), alignof(GFX::Camera));
+        m_Camera = new (cmrData) GFX::Camera();
         m_Camera->Init(0.1f, 100.f, 75.f, 16.f / 9.f, pos, target, up);
 
         m_Suspended = false;
@@ -123,9 +127,10 @@ namespace Raw
         activeRenderPath->Shutdown();
         activeScene->Shutdown();
 
-        delete activeRenderPath;
-        delete activeScene;
-        delete m_Camera;
+        RAW_DEALLOCATE(activeRenderPath);
+        RAW_DEALLOCATE(activeScene);
+        RAW_DEALLOCATE(m_Camera);
+        
         RAW_INFO("ResourceManager shutting down...");
         ResourceManager::Get()->Shutdown();
         ServiceLocator::Get()->GetService(Input::k_ServiceName)->Shutdown();
