@@ -12,18 +12,6 @@ namespace Raw
 
 namespace Raw::GFX
 {
-    class DepthPass;
-    class ForwardPass;
-    class GeometryPass;
-    class TransparencyPass;
-    class FullScreenPass;
-    class LightingPass;
-    class ShadowPass;
-    class SSAOPass;
-    class SSRPass;
-    class FrustumCullingPass;
-    class FXAAPass;
-
     struct RenderPassData
     {
         bool enableAO{ true };
@@ -39,18 +27,8 @@ namespace Raw::GFX
         void Render(Scene* scene, Camera& camera, f32 dt);
 
     private:
-        DepthPass* m_DepthPass;
-        ForwardPass* m_ForwardPass;
-        GeometryPass* m_GeometryPass;
-        TransparencyPass* m_TransparencyPass;
-        FullScreenPass* m_FullScreenPass;
-        LightingPass* m_LightingPass;
-        ShadowPass* m_ShadowPass;
-        SSAOPass* m_SSAOPass;
-        SSRPass* m_SSRPass;
-        FrustumCullingPass* m_FrustumCullingPass;
-        FXAAPass* m_FXAAPass;
+        struct pImplRenderer;
+        pImplRenderer* m_Impl;
 
-        BufferHandle m_SceneDataBuffer;
     };
 }

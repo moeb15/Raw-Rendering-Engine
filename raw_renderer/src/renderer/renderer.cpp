@@ -7,6 +7,7 @@
 #include "scene/scene.hpp"
 #include "core/job_system.hpp"
 #include "editor/editor.hpp"
+#include "memory/memory_service.hpp"
 
 #include "renderer/render_passes/depth_pass.hpp"
 #include "renderer/render_passes/forward_pass.hpp"
@@ -26,38 +27,65 @@ namespace Raw::GFX
     GlobalSceneData sceneData;
     RenderPassData data;
 
+    struct Renderer::pImplRenderer
+    {
+        GeometryPass* m_GeometryPass{ nullptr };
+        TransparencyPass* m_TransparencyPass{ nullptr };
+        FullScreenPass* m_FullScreenPass{ nullptr };
+        LightingPass* m_LightingPass{ nullptr };
+        ShadowPass* m_ShadowPass{ nullptr };
+        SSAOPass* m_SSAOPass{ nullptr };
+        SSRPass* m_SSRPass{ nullptr };
+        FrustumCullingPass* m_FrustumCullingPass{ nullptr };
+        FXAAPass* m_FXAAPass{ nullptr };
+
+        BufferHandle m_SceneDataBuffer;
+    };
+
     void Renderer::Init()
     {
         IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
 
-        m_GeometryPass = new GeometryPass();
-        m_GeometryPass->Init(device);
+        void* implData = RAW_ALLOCATE(sizeof(Renderer::pImplRenderer), alignof(Renderer::pImplRenderer));
+        m_Impl = new (implData) pImplRenderer();
+
+        void* geomData = RAW_ALLOCATE(sizeof(GeometryPass), alignof(GeometryPass));
+        m_Impl->m_GeometryPass = new (geomData) GeometryPass();
+        m_Impl->m_GeometryPass->Init(device);
         
-        m_TransparencyPass = new TransparencyPass();
-        m_TransparencyPass->Init(device);
+        void* transparencyData = RAW_ALLOCATE(sizeof(TransparencyPass), alignof(TransparencyPass));
+        m_Impl->m_TransparencyPass = new (transparencyData) TransparencyPass();
+        m_Impl->m_TransparencyPass->Init(device);
 
-        m_SSAOPass = new SSAOPass();
-        m_SSAOPass->Init(device);
+        void* ssaoData = RAW_ALLOCATE(sizeof(SSAOPass), alignof(SSAOPass));
+        m_Impl->m_SSAOPass = new (ssaoData) SSAOPass();
+        m_Impl->m_SSAOPass->Init(device);
 
-        m_SSRPass = new SSRPass();
-        m_SSRPass->Init(device);
+        void* ssrData = RAW_ALLOCATE(sizeof(SSRPass), alignof(SSRPass));
+        m_Impl->m_SSRPass = new (ssrData) SSRPass();
+        m_Impl->m_SSRPass->Init(device);
 
-        m_LightingPass = new LightingPass();
-        m_LightingPass->Init(device);
-        m_LightingPass->UpdateLightingData();
+        void* lightingData = RAW_ALLOCATE(sizeof(LightingPass), alignof(LightingPass));
+        m_Impl->m_LightingPass = new (lightingData) LightingPass();
+        m_Impl->m_LightingPass->Init(device);
+        m_Impl->m_LightingPass->UpdateLightingData();
 
-        m_FullScreenPass = new FullScreenPass();
-        m_FullScreenPass->Init(device);
-        m_FullScreenPass->UpdateFullScreenData();
+        void* fsData = RAW_ALLOCATE(sizeof(FullScreenPass), alignof(FullScreenPass));
+        m_Impl->m_FullScreenPass = new (fsData) FullScreenPass();
+        m_Impl->m_FullScreenPass->Init(device);
+        m_Impl->m_FullScreenPass->UpdateFullScreenData();
 
-        m_ShadowPass = new ShadowPass();
-        m_ShadowPass->Init(device);
+        void* shadowData = RAW_ALLOCATE(sizeof(ShadowPass), alignof(ShadowPass));
+        m_Impl->m_ShadowPass = new (shadowData) ShadowPass();
+        m_Impl->m_ShadowPass->Init(device);
 
-        m_FrustumCullingPass = new FrustumCullingPass();
-        m_FrustumCullingPass->Init(device);
+        void* fcData = RAW_ALLOCATE(sizeof(FrustumCullingPass), alignof(FrustumCullingPass));
+        m_Impl->m_FrustumCullingPass = new (fcData) FrustumCullingPass();
+        m_Impl->m_FrustumCullingPass->Init(device);
 
-        m_FXAAPass = new FXAAPass();
-        m_FXAAPass->Init(device);
+        void* fxaaData = RAW_ALLOCATE(sizeof(FXAAPass), alignof(FXAAPass));
+        m_Impl->m_FXAAPass = new (fxaaData) FXAAPass();
+        m_Impl->m_FXAAPass->Init(device);
 
         BufferDesc sceneDataDesc;
         sceneDataDesc.bufferSize = sizeof(GlobalSceneData);
@@ -68,19 +96,24 @@ namespace Raw::GFX
         initialData.lightProj[1][1] *= -1;
 
         BufferResource* sceneDataBuffer = (BufferResource*)BufferLoader::Instance()->CreateBuffer("Scene Data Buffer", sceneDataDesc);
-        m_SceneDataBuffer = sceneDataBuffer->buffer;
+        m_Impl->m_SceneDataBuffer = sceneDataBuffer->buffer;
 
-        device->MapBuffer(m_SceneDataBuffer, &initialData, sizeof(GlobalSceneData));
-        device->UnmapBuffer(m_SceneDataBuffer, EBufferMapType::SCENE);
+        device->MapBuffer(m_Impl->m_SceneDataBuffer, &initialData, sizeof(GlobalSceneData));
+        device->UnmapBuffer(m_Impl->m_SceneDataBuffer, EBufferMapType::SCENE);
     }
 
     void Renderer::Shutdown()
     {
-        delete m_GeometryPass;
-        delete m_TransparencyPass;
-        delete m_FullScreenPass;
-        delete m_ShadowPass;
-        delete m_SSAOPass;
+        RAW_DEALLOCATE(m_Impl->m_GeometryPass);
+        RAW_DEALLOCATE(m_Impl->m_TransparencyPass);
+        RAW_DEALLOCATE(m_Impl->m_FullScreenPass);
+        RAW_DEALLOCATE(m_Impl->m_ShadowPass);
+        RAW_DEALLOCATE(m_Impl->m_SSAOPass);
+        RAW_DEALLOCATE(m_Impl->m_SSRPass);
+        RAW_DEALLOCATE(m_Impl->m_LightingPass);
+        RAW_DEALLOCATE(m_Impl->m_FXAAPass);
+        RAW_DEALLOCATE(m_Impl->m_FrustumCullingPass);
+        RAW_DEALLOCATE(m_Impl);
     }
 
     void Renderer::Render(Scene* scene, Camera& camera, f32 dt)
@@ -99,8 +132,8 @@ namespace Raw::GFX
 
         IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
         
-        device->MapBuffer(m_SceneDataBuffer, &sceneData, sizeof(GlobalSceneData));
-        device->UnmapBuffer(m_SceneDataBuffer, EBufferMapType::SCENE);
+        device->MapBuffer(m_Impl->m_SceneDataBuffer, &sceneData, sizeof(GlobalSceneData));
+        device->UnmapBuffer(m_Impl->m_SceneDataBuffer, EBufferMapType::SCENE);
 
         scene->Update(device);
 
@@ -114,16 +147,16 @@ namespace Raw::GFX
         cmd->BeginCommandBuffer();
         cmd->Clear(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
        
-        m_FrustumCullingPass->Execute(device, cmd, scene->GetSceneData());
-        m_GeometryPass->Execute(device, cmd, scene->GetSceneData());
-        m_TransparencyPass->Execute(device, cmd, scene->GetSceneData());
-        m_ShadowPass->Execute(device, cmd, scene->GetSceneData());
+        m_Impl->m_FrustumCullingPass->Execute(device, cmd, scene->GetSceneData());
+        m_Impl->m_GeometryPass->Execute(device, cmd, scene->GetSceneData());
+        m_Impl->m_TransparencyPass->Execute(device, cmd, scene->GetSceneData());
+        m_Impl->m_ShadowPass->Execute(device, cmd, scene->GetSceneData());
         
-        if(data.enableAO) m_SSAOPass->Execute(device, cmd, nullptr);
-        if(data.enableSSR) m_SSRPass->Execute(device, cmd, nullptr);
-        m_LightingPass->Execute(device, cmd, scene->GetSceneData());
-        if(data.enableFXAA) m_FXAAPass->Execute(device, cmd, nullptr);
-        m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
+        if(data.enableAO) m_Impl->m_SSAOPass->Execute(device, cmd, nullptr);
+        if(data.enableSSR) m_Impl->m_SSRPass->Execute(device, cmd, nullptr);
+        m_Impl->m_LightingPass->Execute(device, cmd, scene->GetSceneData());
+        if(data.enableFXAA) m_Impl->m_FXAAPass->Execute(device, cmd, nullptr);
+        m_Impl->m_FullScreenPass->Execute(device, cmd, scene->GetSceneData());
 
         device->EndFrame();
     }
