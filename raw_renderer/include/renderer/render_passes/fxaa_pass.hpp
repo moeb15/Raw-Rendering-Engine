@@ -19,5 +19,12 @@ namespace Raw::GFX
         GPUTechnique technique;
         ComputePipelineDesc techniqueDesc;
         
+        TextureHandle fxaaTexture;
+        TextureDesc fxaaDesc;
+
+    private:
+        bool OnWindowResize(const WindowResizeEvent& e);
+        EventHandler<WindowResizeEvent> m_ResizeHandler;
+
     };
 }
