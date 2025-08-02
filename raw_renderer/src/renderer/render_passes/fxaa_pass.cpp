@@ -8,7 +8,7 @@
 
 namespace Raw::GFX
 {
-    static AOData data;
+    static FullScreenData data;
 
     void FXAAPass::Init(IGFXDevice* device)
     {
@@ -27,37 +27,43 @@ namespace Raw::GFX
         fxaaDesc.format = ETextureFormat::R8G8B8A8_UNORM;
         fxaaTexture = device->CreateTexture(fxaaDesc);
 
-        techniqueDesc.computeShader.shaderName = "fxaa";
-        techniqueDesc.computeShader.stage = EShaderStage::COMPUTE_STAGE;
+        techniqueDesc.sDesc.numStages = 2;
+        techniqueDesc.sDesc.shaders[0].shaderName = "fullscreen";
+        techniqueDesc.sDesc.shaders[0].stage = EShaderStage::VERTEX_STAGE;
+        techniqueDesc.sDesc.shaders[1].shaderName = "fxaa";
+        techniqueDesc.sDesc.shaders[1].stage = EShaderStage::FRAGMENT_STAGE;
 
         techniqueDesc.pushConstant.offset = 0;
-        techniqueDesc.pushConstant.size = 128;
-        techniqueDesc.pushConstant.stage = EShaderStage::COMPUTE_STAGE;
+        techniqueDesc.pushConstant.size = device->GetMaximumPushConstantSize();
+        techniqueDesc.pushConstant.stage = EShaderStage::FRAGMENT_STAGE;
 
-        techniqueDesc.bUseDepthBuffer = true;
-        techniqueDesc.imageAttachments = &fxaaTexture;
+        techniqueDesc.dsDesc.depthEnable = false;
+        techniqueDesc.rDesc.cullMode = ECullMode::BACK;
+        techniqueDesc.rDesc.fillMode = EFillMode::SOLID;
+        techniqueDesc.rDesc.frontFace = EFrontFace::CLOCKWISE;
+
         techniqueDesc.numImageAttachments = 1;
+        techniqueDesc.imageAttachments = &fxaaTexture;
 
         techniqueDesc.name = "FXAA Pass";
 
-        technique.computePipeline = device->CreateComputePipeline(techniqueDesc);
+        technique.gfxPipeline = device->CreateGraphicsPipeline(techniqueDesc);
         TextureLoader::Instance()->CreateFromHandle(ANTI_ALIASING_TEX, fxaaTexture);
 
-        data.depthBuffer = ((TextureResource*)TextureLoader::Instance()->Get(ILLUMINATED_SCENE))->handle.id;
-        data.outputAOTexture = fxaaTexture.id;
+        data.diffuse = ((TextureResource*)TextureLoader::Instance()->Get(ILLUMINATED_SCENE))->handle.id;
     }
 
     void FXAAPass::Execute(IGFXDevice* device, ICommandBuffer* cmd, SceneData* scene)
     {
         cmd->TransitionImage(device->GetDrawImageHandle(), ETextureLayout::GENERAL);
 
-        cmd->BindComputePipeline(technique.computePipeline);
-        cmd->BindAOData(data);
+        cmd->BeginRendering(technique.gfxPipeline);
+        cmd->BindPipeline(technique.gfxPipeline);
+        cmd->BindFullScreenData(data);
 
-        u32 groupX = device->GetBackBufferSize().first / 32;
-        u32 groupY = device->GetBackBufferSize().second / 32;
-        u32 groupZ = 1;
-        cmd->Dispatch(technique.computePipeline, groupX, groupY, groupZ);
+        cmd->Draw(3, 1, 0, 0);
+
+        cmd->EndRendering();
     }
 
     void FXAAPass::ExecuteAsync(IGFXDevice* device, SceneData* scene)
@@ -68,13 +74,13 @@ namespace Raw::GFX
                 cmd->BeginCommandBuffer();
                 cmd->TransitionImage(device->GetDrawImageHandle(), ETextureLayout::GENERAL);
 
-                cmd->BindComputePipeline(technique.computePipeline);
-                cmd->BindAOData(data);
+                cmd->BeginRendering(technique.gfxPipeline);
+                cmd->BindPipeline(technique.gfxPipeline);
+                cmd->BindFullScreenData(data);
 
-                u32 groupX = device->GetBackBufferSize().first / 32;
-                u32 groupY = device->GetBackBufferSize().second / 32;
-                u32 groupZ = 1;
-                cmd->Dispatch(technique.computePipeline, groupX, groupY, groupZ);
+                cmd->Draw(3, 1, 0, 0);
+
+                cmd->EndRendering();
 
                 device->SubmitCommandBuffer(cmd);
             }
@@ -93,10 +99,9 @@ namespace Raw::GFX
 
         TextureLoader::Instance()->CreateFromHandle(ANTI_ALIASING_TEX, fxaaTexture);
 
-        device->UpdateComputePipelineDescriptorSet(technique.computePipeline, 1, &fxaaTexture);
+        device->UpdateGraphicsPipelineImageAttachments(technique.gfxPipeline, 1, &fxaaTexture);
 
-        data.depthBuffer = ((TextureResource*)TextureLoader::Instance()->Get(ILLUMINATED_SCENE))->handle.id;
-        data.outputAOTexture = fxaaTexture.id;
+        data.diffuse = ((TextureResource*)TextureLoader::Instance()->Get(ILLUMINATED_SCENE))->handle.id;
 
         return false;
     }

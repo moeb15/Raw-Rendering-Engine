@@ -17,7 +17,7 @@ namespace Raw::GFX
         virtual void ExecuteAsync(IGFXDevice* device, SceneData* scene) override;
 
         GPUTechnique technique;
-        ComputePipelineDesc techniqueDesc;
+        GraphicsPipelineDesc techniqueDesc;
         
         TextureHandle fxaaTexture;
         TextureDesc fxaaDesc;
