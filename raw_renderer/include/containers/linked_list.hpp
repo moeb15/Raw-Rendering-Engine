@@ -57,9 +57,7 @@ namespace Raw::rstd
                 return m_Curr->data;
             }
             
-        private:
             node* m_Curr{ nullptr };
-
         };
 
         DISABLE_COPY(list);
@@ -75,7 +73,7 @@ namespace Raw::rstd
         
         void pop_front();
         void clear();
-        list_iterator erase(const list_iterator& it);
+        list_iterator erase(list_iterator& it);
         u32 size() const { return m_Size; }
         bool empty() const { return m_Size > 0; }
         T& back() const;
@@ -169,7 +167,7 @@ namespace Raw::rstd
     }
 
     template <typename T>
-    list<T>::list_iterator list<T>::erase(const list<T>::list_iterator& it)
+    list<T>::list_iterator list<T>::erase(list<T>::list_iterator& it)
     {
         it--;
         list_iterator& prev = it;
