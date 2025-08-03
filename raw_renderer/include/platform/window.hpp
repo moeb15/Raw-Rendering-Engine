@@ -2,7 +2,8 @@
 
 #include "core/defines.hpp"
 #include "core/service.hpp"
-#include <string>
+#include "core/string.hpp"
+// #include <string>
 #include <utility>
 
 
@@ -10,7 +11,7 @@ namespace Raw
 {
     struct WindowConfig
     {
-        std::string title;
+        rstd::string title;
         u32 width;
         u32 height;
     };

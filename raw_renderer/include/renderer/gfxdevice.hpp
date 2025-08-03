@@ -3,7 +3,8 @@
 #include "core/service.hpp"
 #include "renderer/renderer_enums.hpp"
 #include "renderer/gpu_resources.hpp"
-#include <string>
+#include "core/string.hpp"
+// #include <string>
 #include <utility>
 
 #define MAX_SWAPCHAIN_IMAGES 3
@@ -13,7 +14,7 @@ namespace Raw::GFX
     struct DeviceConfig
     {
         EDeviceBackend rendererAPI;
-        std::string name;
+        rstd::string name;
         u32 width;
         u32 height;
         u32 maxWidth;

@@ -5,14 +5,15 @@
 #include "events/event_handler.hpp"
 #include "events/core_events.hpp"
 #include "renderer/camera.hpp"
-#include <string>
+#include "core/string.hpp"
+// #include <string>
 #include <memory>
 
 namespace Raw
 {
     struct ApplicationConfig
     {
-        std::string name;
+        rstd::string name;
         u32 width;
         u32 height;
     };
