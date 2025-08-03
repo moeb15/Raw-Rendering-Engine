@@ -29,6 +29,8 @@ namespace Raw::GFX
 
     struct Renderer::pImplRenderer
     {
+        void Shutdown();
+
         GeometryPass* m_GeometryPass{ nullptr };
         TransparencyPass* m_TransparencyPass{ nullptr };
         FullScreenPass* m_FullScreenPass{ nullptr };
@@ -41,6 +43,19 @@ namespace Raw::GFX
 
         BufferHandle m_SceneDataBuffer;
     };
+
+    void Renderer::pImplRenderer::Shutdown()
+    {
+        RAW_DEALLOCATE(m_GeometryPass);
+        RAW_DEALLOCATE(m_TransparencyPass);
+        RAW_DEALLOCATE(m_FullScreenPass);
+        RAW_DEALLOCATE(m_ShadowPass);
+        RAW_DEALLOCATE(m_SSAOPass);
+        RAW_DEALLOCATE(m_SSRPass);
+        RAW_DEALLOCATE(m_LightingPass);
+        RAW_DEALLOCATE(m_FXAAPass);
+        RAW_DEALLOCATE(m_FrustumCullingPass);
+    }
 
     void Renderer::Init()
     {
@@ -104,15 +119,8 @@ namespace Raw::GFX
 
     void Renderer::Shutdown()
     {
-        RAW_DEALLOCATE(m_Impl->m_GeometryPass);
-        RAW_DEALLOCATE(m_Impl->m_TransparencyPass);
-        RAW_DEALLOCATE(m_Impl->m_FullScreenPass);
-        RAW_DEALLOCATE(m_Impl->m_ShadowPass);
-        RAW_DEALLOCATE(m_Impl->m_SSAOPass);
-        RAW_DEALLOCATE(m_Impl->m_SSRPass);
-        RAW_DEALLOCATE(m_Impl->m_LightingPass);
-        RAW_DEALLOCATE(m_Impl->m_FXAAPass);
-        RAW_DEALLOCATE(m_Impl->m_FrustumCullingPass);
+        m_Impl->Shutdown();
+        
         RAW_DEALLOCATE(m_Impl);
     }
 
