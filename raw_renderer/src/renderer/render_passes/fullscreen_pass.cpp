@@ -9,6 +9,7 @@
 namespace Raw::GFX
 {
     static FullScreenData data;
+    static bool useAA = false;
 
     void FullScreenPass::Init(IGFXDevice* device)
     {
@@ -60,7 +61,7 @@ namespace Raw::GFX
 
     void FullScreenPass::UpdateFullScreenData()
     {
-        data.diffuse = ((TextureResource*)TextureLoader::Instance()->Get(ILLUMINATED_SCENE))->handle.id;
+        data.diffuse = useAA ? ((TextureResource*)TextureLoader::Instance()->Get(ANTI_ALIASING_TEX))->handle.id : ((TextureResource*)TextureLoader::Instance()->Get(ILLUMINATED_SCENE))->handle.id;
     }
 
     bool FullScreenPass::OnWindowResize(const WindowResizeEvent& e)
@@ -75,10 +76,12 @@ namespace Raw::GFX
         if(e.GetState())
         {
             data.diffuse = ((TextureResource*)TextureLoader::Instance()->Get(ANTI_ALIASING_TEX))->handle.id;
+            useAA = true;
         }
         else
         {
             data.diffuse = ((TextureResource*)TextureLoader::Instance()->Get(ILLUMINATED_SCENE))->handle.id;
+            useAA = false;
         }
 
         return true;
