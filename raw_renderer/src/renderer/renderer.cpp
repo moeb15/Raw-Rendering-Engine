@@ -24,6 +24,7 @@
 namespace Raw::GFX
 {
     f32 elapsedTime = 0.0f;
+    IGFXDevice* device = nullptr;
     GlobalSceneData sceneData;
     RenderPassData data;
 
@@ -59,7 +60,7 @@ namespace Raw::GFX
 
     void Renderer::Init()
     {
-        IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
+        device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
 
         void* implData = RAW_ALLOCATE(sizeof(Renderer::pImplRenderer), alignof(Renderer::pImplRenderer));
         m_Impl = new (implData) pImplRenderer();
@@ -137,8 +138,6 @@ namespace Raw::GFX
         sceneData.viewProj = sceneData.projection * sceneData.view;
         sceneData.cameraFrustum = camera.GetFrustum();
         if(tex) sceneData.shadowMapIndex = tex->handle.id;
-
-        IGFXDevice* device = (IGFXDevice*)ServiceLocator::Get()->GetService(IGFXDevice::k_ServiceName);
         
         device->MapBuffer(m_Impl->m_SceneDataBuffer, &sceneData, sizeof(GlobalSceneData));
         device->UnmapBuffer(m_Impl->m_SceneDataBuffer, EBufferMapType::SCENE);
