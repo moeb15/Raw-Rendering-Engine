@@ -12,7 +12,6 @@ namespace Raw::rstd
 
     void string::clear()
     {
-        if(m_Str) RAW_DEBUG("Deleting string '%s' at address %p", m_Str, m_Str);
         RAW_DEALLOCATE(m_Str);
         m_Len = 0;
         m_Str = nullptr;
