@@ -636,6 +636,34 @@ namespace Raw::GFX
         {
             VK_CHECK(vkAllocateDescriptorSets(m_LogicalDevice, &materialAllocInfo, &m_MaterialDataSet[i]));
         }
+        
+        // initialize point light data pool
+        VkDescriptorPoolSize plSize;
+        plSize.descriptorCount = 1;
+        plSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+        VkDescriptorPoolCreateInfo lightDataPool = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+        lightDataPool.maxSets = MAX_SWAPCHAIN_IMAGES * 10;
+        lightDataPool.poolSizeCount = 1;
+        lightDataPool.pPoolSizes = &mSize;
+
+        VK_CHECK(vkCreateDescriptorPool(m_LogicalDevice, &lightDataPool, m_AllocCallbacks, &m_LightPool));
+
+        VulkanDescriptorLayoutBuilder lightBuilder;
+        lightBuilder.Init();
+        lightBuilder.AddBinding(0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT);
+        m_LightLayout = lightBuilder.Build();
+        lightBuilder.Shutdown();
+
+        VkDescriptorSetAllocateInfo lightAllocInfo = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        lightAllocInfo.descriptorPool = m_LightPool;
+        lightAllocInfo.descriptorSetCount = 1;
+        lightAllocInfo.pSetLayouts = &m_LightLayout;
+
+        for(u32 i = 0; i < m_SwapchainImageCount; i++)
+        {
+            VK_CHECK(vkAllocateDescriptorSets(m_LogicalDevice, &lightAllocInfo, &m_LightSet[i]));
+        }
 
         // initialize default descriptor pool
         VkDescriptorPoolSize defaultPoolSizes[] =
@@ -747,6 +775,7 @@ namespace Raw::GFX
         SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (u64)m_BindlessLayout, "Bindless Descriptor Layout");
         SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (u64)m_SceneLayout, "SceneData Descriptor Layout");
         SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (u64)m_MaterialDataLayout, "MaterialData Descriptor Layout");
+        SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (u64)m_LightLayout, "Light Descriptor Layout");
         SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (u64)m_BindlessSet, "Bindless Descriptor Set");
 
         for(u32 i = 0; i < m_SwapchainImageCount; i++)
@@ -759,8 +788,15 @@ namespace Raw::GFX
         for(u32 i = 0; i < m_SwapchainImageCount; i++)
         {
             cstring index = std::to_string(i).c_str();
-            std::string fullName = "MaterialDat Descriptor Set: " + std::to_string(i); 
+            std::string fullName = "MaterialData Descriptor Set: " + std::to_string(i); 
             SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (u64)m_MaterialDataSet[i], fullName.c_str());
+        }
+
+        for(u32 i = 0; i < m_SwapchainImageCount; i++)
+        {
+            cstring index = std::to_string(i).c_str();
+            std::string fullName = "Light Descriptor Set: " + std::to_string(i); 
+            SetResourceName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (u64)m_LightSet[i], fullName.c_str());
         }
     }
 
@@ -837,13 +873,17 @@ namespace Raw::GFX
         vkDestroyDescriptorSetLayout(m_LogicalDevice, m_BindlessLayout, m_AllocCallbacks);
         vkDestroyDescriptorPool(m_LogicalDevice, m_BindlessPool, m_AllocCallbacks);
 
-        RAW_INFO("Destroy Vulkan SceneData Pool and Layout.");
+        RAW_INFO("Destroying Vulkan SceneData Pool and Layout.");
         vkDestroyDescriptorSetLayout(m_LogicalDevice, m_SceneLayout, m_AllocCallbacks);
         vkDestroyDescriptorPool(m_LogicalDevice, m_SceneDataPool, m_AllocCallbacks);
 
-        RAW_INFO("Destroy Vulkan MaterialData Pool and Layout.");
+        RAW_INFO("Destroying Vulkan MaterialData Pool and Layout.");
         vkDestroyDescriptorSetLayout(m_LogicalDevice, m_MaterialDataLayout, m_AllocCallbacks);
         vkDestroyDescriptorPool(m_LogicalDevice, m_MaterialDataPool, m_AllocCallbacks);
+
+        RAW_INFO("Destroying Vulkan Light Pool and Layout.");
+        vkDestroyDescriptorSetLayout(m_LogicalDevice, m_LightLayout, m_AllocCallbacks);
+        vkDestroyDescriptorPool(m_LogicalDevice, m_LightPool, m_AllocCallbacks);
 
         RAW_INFO("Destroy Vulkan Default Descriptor Pool.");
         vkDestroyDescriptorPool(m_LogicalDevice, m_DefaultPool, m_AllocCallbacks);
@@ -928,6 +968,8 @@ namespace Raw::GFX
         frameManager.sceneDataUpdates[m_CurFrame].UpdateSet(m_SceneDataSet[m_CurFrame]);
         // update material data descriptor set
         frameManager.materialDataUpdates[m_CurFrame].UpdateSet(m_MaterialDataSet[m_CurFrame]);
+        // update light data descriptor set
+        frameManager.lightDataUpdates[m_CurFrame].UpdateSet(m_LightSet[m_CurFrame]);
         
         VkResult res = vkAcquireNextImageKHR(m_LogicalDevice, m_Swapchain, U64_MAX, m_ImageAcquiredSemaphore[m_CurFrame], VK_NULL_HANDLE, &m_SwapchainImageIndex);
         if(res == VK_ERROR_OUT_OF_DATE_KHR)
@@ -1074,6 +1116,11 @@ namespace Raw::GFX
                     frameManager.bindlessSetUpdates[m_CurFrame].WriteBuffer(VULKAN_UBO_BINDING, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
                     break;
                 }
+                case EBufferMapType::POINTLIGHT:
+                {
+                    frameManager.lightDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
             }
         }
         
@@ -1104,6 +1151,11 @@ namespace Raw::GFX
                 case EBufferMapType::BINDLESS:
                 {
                     frameManager.bindlessSetUpdates[m_CurFrame].WriteBuffer(VULKAN_UBO_BINDING, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+                    break;
+                }
+                case EBufferMapType::POINTLIGHT:
+                {
+                    frameManager.lightDataUpdates[m_CurFrame].WriteBuffer(0, buffer->buffer, buffer->allocInfo.size, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
                     break;
                 }
             }
@@ -1634,8 +1686,8 @@ namespace Raw::GFX
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         
-        // use bindless descriptor set layout, scene data layout, and material data layout for all graphics pipelines
-        std::vector<VkDescriptorSetLayout> layouts = { m_SceneLayout, m_BindlessLayout, m_MaterialDataLayout };
+        // use bindless descriptor set layout, scene data layout, material data layout, and point light data layout for all graphics pipelines
+        std::vector<VkDescriptorSetLayout> layouts = { m_SceneLayout, m_BindlessLayout, m_MaterialDataLayout, m_LightLayout };
         if(desc.numImageAttachments > 0)
         {
             pipelineLayoutInfo.pSetLayouts = layouts.data();

@@ -206,6 +206,11 @@ namespace Raw::GFX
         VkDescriptorSetLayout m_MaterialDataLayout{ VK_NULL_HANDLE };
         VkDescriptorSet m_MaterialDataSet[MAX_SWAPCHAIN_IMAGES]{};
 
+        // used for global point light data
+        VkDescriptorPool m_LightPool{ VK_NULL_HANDLE };
+        VkDescriptorSetLayout m_LightLayout{ VK_NULL_HANDLE };
+        VkDescriptorSet m_LightSet[MAX_SWAPCHAIN_IMAGES]{};
+
         // default descriptor pool and mesh descriptor set/layout
         VkDescriptorPool m_DefaultPool{ VK_NULL_HANDLE };
 
