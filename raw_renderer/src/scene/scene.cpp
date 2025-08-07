@@ -2,6 +2,9 @@
 #include "utility/gltf.hpp"
 #include "resources/buffer_loader.hpp"
 #include "resources/texture_loader.hpp"
+#include <cstdlib>
+#include <cmath>
+#include "core/timer.hpp"
 
 namespace Raw
 {
@@ -64,6 +67,9 @@ namespace Raw
 
     void Scene::Init(std::string& filePath, GFX::IGFXDevice* device)
     {
+        u32 curTime = (u32)Timer::Get()->Now();
+        srand(curTime);
+
         if(m_SceneData)
         {
             BufferLoader::Instance()->Unload(m_SceneData->vertexBufferId);
@@ -97,6 +103,44 @@ namespace Raw
         m_MaterialDataBuffer = device->CreateBuffer(materialDataDesc);
         device->MapBuffer(m_MaterialDataBuffer, matData.data(), matData.size() * materialSize);
         device->UnmapBuffer(m_MaterialDataBuffer, GFX::EBufferMapType::MATERIAL);
+
+        m_PointLights.resize(MAX_LIGHT_COUNT);
+        for(u32 i = 0; i < m_PointLights.size(); i++)
+        {
+            f32 x = (f32)((rand() % 10) * pow(-1, curTime + 1)); 
+            f32 y = (f32)((rand() % 10) * pow(-1, curTime - 1)); 
+            f32 z = (f32)((rand() % 10) * pow(-1, curTime));
+
+            f32 r = (f32)rand() / (f32)(RAND_MAX);
+            f32 g = (f32)rand() / (f32)(RAND_MAX);
+            f32 b = (f32)rand() / (f32)(RAND_MAX);
+
+            m_PointLights[i].position.x = x;
+            m_PointLights[i].position.y = y;
+            m_PointLights[i].position.z = z;
+
+            m_PointLights[i].direction.x = 0.0f;
+            m_PointLights[i].direction.y = -1.0f;
+            m_PointLights[i].direction.z = 0.0f;
+
+            m_PointLights[i].color.r = r;
+            m_PointLights[i].color.g = g;
+            m_PointLights[i].color.b = b;
+            m_PointLights[i].color.a = 1.0f;
+
+            m_PointLights[i].intensity = 1.f;
+            m_PointLights[i].radius = 10.f;
+        }
+
+        u64 lightSize = sizeof(GFX::PointLight);
+        GFX::BufferDesc lightBufferDesc;
+        lightBufferDesc.bufferSize = MAX_LIGHT_COUNT * lightSize;
+        lightBufferDesc.memoryType = GFX::EMemoryType::HOST_VISIBLE;
+        lightBufferDesc.type = GFX::EBufferType::UNIFORM;
+
+        m_PointLightBuffer = device->CreateBuffer(materialDataDesc);
+        device->MapBuffer(m_PointLightBuffer, m_PointLights.data(), m_PointLights.size() * lightSize);
+        device->UnmapBuffer(m_PointLightBuffer, GFX::EBufferMapType::POINTLIGHT);
     }
     
     void Scene::Update(GFX::IGFXDevice* device)
@@ -107,10 +151,15 @@ namespace Raw
         u64 materialSize = sizeof(GFX::PBRMaterialData);
         device->MapBuffer(m_MaterialDataBuffer, matData.data(), matData.size() * materialSize);
         device->UnmapBuffer(m_MaterialDataBuffer, GFX::EBufferMapType::MATERIAL);
+
+        u64 lightSize = sizeof(GFX::PointLight);
+        device->MapBuffer(m_PointLightBuffer, m_PointLights.data(), m_PointLights.size() * lightSize);
+        device->UnmapBuffer(m_PointLightBuffer, GFX::EBufferMapType::POINTLIGHT);
     }
 
     void Scene::Shutdown()
     {
         m_SceneData.reset();
+        m_PointLights.shutdown();
     }
 }

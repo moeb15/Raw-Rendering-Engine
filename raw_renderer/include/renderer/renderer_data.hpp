@@ -11,6 +11,17 @@ namespace Raw::GFX
     #define SHADOW_MAP_SIZE 2048
     #define AMBIENT_OCCLUSION_TEX "aoTexture"
     #define REFLECTION_TEX "refTexture"
+    #define ANTI_ALIASING_TEX "aaTex"
+    #define MAX_LIGHT_COUNT 64
+
+    struct PointLight
+    {
+        glm::vec3 position{ 0.0f, 0.0f, 0.0f };
+        f32 radius{ 10.f };
+        glm::vec3 direction{ 0.0f, -1.0f, 0.0f };
+        f32 intensity{ 1.0f };
+        glm::vec4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
+    };
 
     struct Plane
     {

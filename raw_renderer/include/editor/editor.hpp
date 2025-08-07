@@ -2,6 +2,7 @@
 
 #include "core/defines.hpp"
 #include "renderer/renderer_data.hpp"
+#include "scene/scene.hpp"
 
 union SDL_Event;
 
@@ -17,6 +18,6 @@ namespace Raw
     public:
         static Editor* Get();
         void ProcessEvent(SDL_Event* event);
-        void Render(f32 dt, GFX::SceneData& sceneData, GFX::GlobalSceneData& globalData, GFX::RenderPassData* passData);
+        void Render(f32 dt, Scene* scene, GFX::GlobalSceneData& globalData, GFX::RenderPassData* passData);
     };
 }

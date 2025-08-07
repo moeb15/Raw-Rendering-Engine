@@ -9,6 +9,7 @@ namespace Raw
 {
     static Editor s_Editor;
     static GFX::RenderPassData prevData;
+    static i32 lightIndex = 0;
 
     Editor* Editor::Get()
     {
@@ -20,8 +21,10 @@ namespace Raw
         ImGui_ImplSDL3_ProcessEvent(event);
     }
     
-    void Editor::Render(f32 dt, GFX::SceneData& sceneData, GFX::GlobalSceneData& globalData, GFX::RenderPassData* passData)
+    void Editor::Render(f32 dt, Scene* scene, GFX::GlobalSceneData& globalData, GFX::RenderPassData* passData)
     {
+        GFX::SceneData& sceneData = *scene->GetSceneData();
+
         ImGuiIO& io = ImGui::GetIO();
         ImGui::Begin("Editor");
         ImGui::Separator();
@@ -59,6 +62,32 @@ namespace Raw
         globalData.lightView = glm::lookAt(glm::vec3(0, 15.f, 0), glm::vec3(-globalData.lightDir.x, -globalData.lightDir.y, -globalData.lightDir.z), glm::vec3(0, 0, 1));
         globalData.lightProj = glm::ortho(-20.f, 20.f, -20.f, 20.f, -15.f, 15.f);
     
+        ImGui::Spacing();
+        ImGui::Text("Point Lights");
+        ImGui::SliderInt("Point Light Index", &lightIndex, 0, MAX_LIGHT_COUNT - 1);
+        GFX::PointLight* rootLight = scene->GetPointLights();
+
+        ImGui::Text("Position:");
+        ImGui::SliderFloat("PointLight X", &rootLight[lightIndex].position.x, -10.f, 10.f, "%.3f");
+        ImGui::SliderFloat("PointLight Y", &rootLight[lightIndex].position.y, -10.f, 10.f, "%.3f");
+        ImGui::SliderFloat("PointLight Z", &rootLight[lightIndex].position.z, -10.f, 10.f, "%.3f");
+
+        ImGui::Text("Direction:");
+        ImGui::SliderFloat("PointLight Dir X", &rootLight[lightIndex].direction.x, -1.f, 1.f, "%.3f");
+        ImGui::SliderFloat("PointLight Dir Y", &rootLight[lightIndex].direction.y, -1.f, 1.f, "%.3f");
+        ImGui::SliderFloat("PointLight Dir Z", &rootLight[lightIndex].direction.z, -1.f, 1.f, "%.3f");
+
+        ImGui::Text("Color:");
+        ImGui::SliderFloat("R", &rootLight[lightIndex].color.r, 0.f, 1.f, "%.1f");
+        ImGui::SliderFloat("G", &rootLight[lightIndex].color.g, 0.f, 1.f, "%.1f");
+        ImGui::SliderFloat("B", &rootLight[lightIndex].color.b, 0.f, 1.f, "%.1f");
+        ImGui::SliderFloat("A", &rootLight[lightIndex].color.a, 0.f, 1.f, "%.1f");
+
+        ImGui::SliderFloat("Intensity:", &rootLight[lightIndex].intensity, 0.f, 10.f, "%.1f");
+        ImGui::SliderFloat("Radius:", &rootLight[lightIndex].radius, 0.f, 100.f, "%.1f");
+
+        rootLight[lightIndex].direction = glm::normalize(rootLight[lightIndex].direction);
+
         ImGui::Spacing();
         ImGui::Text("Meshes");
         if(ImGui::TreeNode("Root"))
