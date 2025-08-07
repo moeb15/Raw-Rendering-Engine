@@ -230,15 +230,16 @@ namespace Raw::GFX
         VkDescriptorSet sceneDataSet = VulkanGFXDevice::Get()->m_SceneDataSet[curFrame];
         VkDescriptorSet bindlessSet = VulkanGFXDevice::Get()->m_BindlessSet;
         VkDescriptorSet materialDataSet = VulkanGFXDevice::Get()->m_MaterialDataSet[curFrame];
+        VkDescriptorSet lightSet = VulkanGFXDevice::Get()->m_LightSet[curFrame];
         if(numAttachments > 0)
         {
-            VkDescriptorSet sets[] = { sceneDataSet, bindlessSet, materialDataSet };
-            vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->pipelineLayout, 0, 3, sets, 0, nullptr);
+            VkDescriptorSet sets[] = { sceneDataSet, bindlessSet, materialDataSet, lightSet };
+            vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->pipelineLayout, 0, ArraySize(sets), sets, 0, nullptr);
         }
         else
         {
             VkDescriptorSet sets[] = { sceneDataSet };
-            vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->pipelineLayout, 0, 1, sets, 0, nullptr);
+            vkCmdBindDescriptorSets(vulkanCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfxPipeline->pipelineLayout, 0, ArraySize(sets), sets, 0, nullptr);
         }
 
         VkExtent2D drawExent = VulkanGFXDevice::Get()->GetDrawExtent();
