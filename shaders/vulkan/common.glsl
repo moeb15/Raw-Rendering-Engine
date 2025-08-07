@@ -1,8 +1,18 @@
 #define MAX_MATERIALS 512
+#define MAX_LIGHT_COUNT 64
 #define INVALID_MATERIAL_INDEX 4294967295
 #define PI 3.1415926538
 #define AMBIENT 0.5
 #define BIAS 0.0005
+
+struct PointLight
+{
+    vec3 position;
+    float radius;
+    vec3 direction;
+    float intensity;
+    vec4 color;
+};
 
 struct Plane
 {
