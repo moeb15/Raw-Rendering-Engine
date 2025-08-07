@@ -29,6 +29,7 @@ namespace Raw::GFX
         BINDLESS,
         SCENE,
         MATERIAL,
+        POINTLIGHT,
     };
 
     class IGFXDevice : public IService
