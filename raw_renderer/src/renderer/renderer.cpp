@@ -145,7 +145,7 @@ namespace Raw::GFX
         scene->Update(device);
 
         device->BeginOverlay();
-        Editor::Get()->Render(dt, *scene->GetSceneData(), sceneData, &data);
+        Editor::Get()->Render(dt, scene, sceneData, &data);
         
         device->BeginFrame();
         
