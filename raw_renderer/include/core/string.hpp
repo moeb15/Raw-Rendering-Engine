@@ -53,6 +53,12 @@ namespace Raw::rstd
             return !strcmp(this->c_str(), val.c_str());
         }
 
+        bool operator!=(const string& val)
+        {
+            if(this->m_Len != val.m_Len) return true;
+            return strcmp(this->c_str(), val.c_str());
+        }
+
         RAW_INLINE cstring c_str() const { return m_Str; }
         RAW_INLINE u32 length() const { return m_Len; }
     
