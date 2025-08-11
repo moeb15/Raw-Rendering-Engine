@@ -77,11 +77,7 @@ namespace Raw
         for(auto& handler : m_EventHandlers[event->GetEventType()])
         {
             event->m_Handled = handler->Execute(*event.get());
-            if(event->m_Handled)
-            {
-                //RAW_DEBUG("Event %u has been handled and does not need to be sent to other listeners.", event->GetEventType());
-                break;
-            }
+            if(event->m_Handled) break;
         }
     }
     
@@ -96,8 +92,6 @@ namespace Raw
             m_EventQueues[m_ActiveQueue].push_back(std::move(event));
             return;
         }
-
-        //RAW_DEBUG("Did not queue event %u because there are no subscribers for this event type", event->GetEventType());
     }
 
     bool EventManager::ProcessEvents()
@@ -120,11 +114,7 @@ namespace Raw
                 for(auto& it : handlers)
                 {
                     pEvent->m_Handled = it->Execute(*pEvent.get());
-                    if(pEvent->m_Handled)
-                    {
-                        //RAW_DEBUG("Event %u has been handled and does not need to be sent to other listeners.", pEvent->GetEventType());
-                        break;
-                    }
+                    if(pEvent->m_Handled) break;
                 }
             }
         }
