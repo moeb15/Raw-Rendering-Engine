@@ -77,7 +77,6 @@ namespace Raw
             BufferLoader::Instance()->Unload(m_SceneData->indirectBufferId);
             BufferLoader::Instance()->Unload(m_SceneData->culledIndirectBufferId);
             BufferLoader::Instance()->Unload(m_SceneData->meshDrawsBufferId);
-            BufferLoader::Instance()->Unload(m_SceneData->meshDrawsBufferId);
 
             for(u64 i = 0; i < m_SceneData->imageIds.size(); i++)
             {
