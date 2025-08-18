@@ -169,7 +169,11 @@ namespace Raw::rstd
             RAW_DEALLOCATE(m_Data);
         }
 
-        memset(data + curSize, 0, (capacity - m_Capacity) * sizeof(T));
+        for(u32 i = 0; i < (capacity - m_Capacity) * sizeof(T); i += sizeof(T))
+        {
+            *(data + (curSize + i)) = T();
+        }
+        // memset(data + curSize, 0, (capacity - m_Capacity) * sizeof(T));
 
         m_Data = data;
         m_Size = curSize;
