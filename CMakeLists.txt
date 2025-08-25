@@ -76,6 +76,7 @@ if(WIN32)
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
+target_compile_definitions(${PROJECT_NAME} PRIVATE BASE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(VULKAN_SHADERS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders/vulkan)
 set(VULKAN_SHADERS_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders-bin/vulkan)
