@@ -16,10 +16,13 @@
 #include "events/core_events.hpp"
 #include "memory/smart_pointers.hpp"
 #include "memory/memory_service.hpp"
+#include "json.hpp"
+#include <fstream>
+
+using json = nlohmann::json;
 
 namespace Raw
 {
-    std::string defaultSceneModel = RAW_RESOURCES_DIR + "/GLTF/Sponza/glTF/Sponza.gltf";
     Scene* activeScene = nullptr;
     GFX::Renderer* activeRenderPath = nullptr;
 
@@ -82,7 +85,17 @@ namespace Raw
         GFX::IGFXDevice* device = (GFX::IGFXDevice*)ServiceLocator::Get()->GetService(GFX::IGFXDevice::k_ServiceName);
         void* sceneData = RAW_ALLOCATE(sizeof(Scene), alignof(Scene));
         activeScene = new (sceneData) Scene();
-        activeScene->Init(defaultSceneModel, device);
+
+        static const std::string RAW_BASE_DIR{ BASE_DIR };
+        std::string modelJSON = RAW_BASE_DIR + "/model.json";
+        std::ifstream file(modelJSON);
+        json jsonData = json::parse(file);
+
+        auto it = jsonData.find("file");
+        if(it == jsonData.end()) RAW_ASSERT_MSG(false, "Failed to parse model.json!");
+        std::string modelRelPath = jsonData.value("file", "");
+        std::string sceneModel = RAW_RESOURCES_DIR + modelRelPath.c_str();
+        activeScene->Init(sceneModel, device);
 
         glm::vec3 pos(0.0f, 0.0f, 0.f);
         glm::vec3 target(0.0f,0.0f, -1.f);
@@ -92,6 +105,7 @@ namespace Raw
         m_Camera->Init(0.1f, 100.f, 75.f, 16.f / 9.f, pos, target, up);
 
         m_Suspended = false;
+        file.close();
     }
     
     void Application::Run()
