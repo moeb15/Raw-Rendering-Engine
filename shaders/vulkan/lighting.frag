@@ -10,6 +10,11 @@ layout(set = 1, binding = 0) uniform sampler3D globalTextures3D[];
 layout(set = 1, binding = 1) uniform texture2D globalImages[];
 layout(set = 1, binding = 2) uniform sampler shadowSampler;
 
+layout(set = 3, binding = 0) uniform lightData
+{
+    PointLight data[MAX_LIGHT_COUNT];
+} GlobalPointLightData;
+
 layout (location = 0) in vec2 inUV;
 
 layout (location = 0) out vec4 outFragColor;
@@ -65,6 +70,42 @@ float filterPCF(vec4 shadowPos)
 	return shadowFactor / count;
 }
 
+
+vec3 calcPointLight(uint index, vec4 baseColor, vec3 normal, vec4 rmOcc, vec3 eyePos, vec3 vPos)
+{
+    vec3 finalColor = vec3(0.0f);
+    PointLight light = GlobalPointLightData.data[index];
+    vec3 localLightPos = mat3(GlobalSceneData.view) * light.position;
+
+    float A = light.radius / dot(localLightPos - vPos, localLightPos - vPos);
+
+    vec3 V = normalize(eyePos - vPos);
+    vec3 L = normalize(light.position - vPos);
+    vec3 N = normal;
+    vec3 H = normalize(L + V);
+
+    float roughness = rmOcc.r;
+    float metalness = rmOcc.g;
+	float alpha = pow(roughness, 2.0);
+
+    vec3 F0 = mix(vec3(0.04), baseColor.rgb, metalness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    float NDF = distGGX(N, H, roughness);
+    float G = geomSmith(N, V, L, roughness);
+    
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
+
+    vec3 diffuse = baseColor.rgb / PI;
+
+    float NdotL = clamp(max(dot(N, L), 0.0), 0, 1);
+    vec3 radiance = light.color.xyz * light.intensity * A * 0.000001;
+
+    return radiance;
+}
+
 void main() 
 {
     vec4 baseColor = texture(globalTextures[nonuniformEXT(PushConstants.diffuse)], inUV);
@@ -75,6 +116,8 @@ void main()
     vec4 viewPos = texture(globalTextures[nonuniformEXT(PushConstants.viewspace)], inUV);
     vec4 transparency = texture(globalTextures[nonuniformEXT(PushConstants.transparent)], inUV);
     vec4 occlusionTex = texture(globalTextures[nonuniformEXT(PushConstants.occlusion)], inUV);
+
+    if(reflectColor.a > 0.0f) baseColor = reflectColor;
 
     mat3 rot = mat3(GlobalSceneData.view);
     vec3 translation = vec3(GlobalSceneData.view[3]);
@@ -114,8 +157,17 @@ void main()
     // shadowUV.z = lightClipSpacePos.z;
     // shadowUV.w = lightClipSpacePos.w;
 
-    float shadow = filterPCF(lightClipSpacePos);    
-    vec3 relfectedLight = mix(specular, reflectColor.rgb, reflectColor.a);
+    float shadow = filterPCF(lightClipSpacePos);
+    
+    vec3 specRef = cooktorranceSpec(N, L, V, H, specular, roughness);
+    specRef *= vec3(NdotL);
+    vec3 relfectedLight = specRef;
+
+    /*vec3 pointLightColor = vec3(0.0f);
+    for(uint i = 0; i < MAX_LIGHT_COUNT; i++)
+    {
+        pointLightColor += calcPointLight(i, baseColor, normal, rmOcc, eyePos, viewPos.xyz);
+    }*/
 
     vec3 Lo = (diffuse + relfectedLight) * radiance * NdotL;
     vec3 ambient = baseColor.rgb * AMBIENT;

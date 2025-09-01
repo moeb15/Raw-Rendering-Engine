@@ -10,6 +10,7 @@
 namespace Raw::GFX
 {
     static FullScreenData data;
+    static bool ssrToggled = true;
 
     void LightingPass::Init(IGFXDevice* device)
     {
@@ -104,7 +105,7 @@ namespace Raw::GFX
         tex = (TextureResource*)TextureLoader::Instance()->Get(AMBIENT_OCCLUSION_TEX);
         data.occlusion = tex->handle.id;
 
-        tex = (TextureResource*)TextureLoader::Instance()->Get(REFLECTION_TEX);
+        tex = ssrToggled ? (TextureResource*)TextureLoader::Instance()->Get(REFLECTION_TEX) : (TextureResource*)TextureLoader::Instance()->Get(GBUFFER_DIFFUSE);
         data.reflection = tex->handle.id;
     }
 
@@ -149,9 +150,10 @@ namespace Raw::GFX
         }
         else
         {
-            data.reflection = ((TextureResource*)TextureLoader::Instance()->Get(DEFAULT_EMISSIVE))->handle.id;
+            data.reflection = ((TextureResource*)TextureLoader::Instance()->Get(GBUFFER_DIFFUSE))->handle.id;
         }
 
+        ssrToggled = e.GetState();
         return true;
     }
 }
