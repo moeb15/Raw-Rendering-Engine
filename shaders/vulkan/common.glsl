@@ -130,3 +130,13 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
+
+vec3 cooktorranceSpec(vec3 N, vec3 L, vec3 V, vec3 H, vec3 specular, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float D = distGGX(N, H, roughness);
+    float G = geomSmith(N, V, L, roughness);
+
+    float rim = mix(1.0 - roughness * 0.9, 1.0, NdotV);
+    return (1.0 / rim) * specular * G * D;
+}
